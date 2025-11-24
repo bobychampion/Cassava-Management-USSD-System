@@ -67,10 +67,10 @@ export const LoansView: React.FC<LoansViewProps> = ({ loans, farmers, onIssueLoa
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h2 className="text-2xl font-bold text-gray-800">Loan Management</h2>
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Loan Management</h2>
         <button
           onClick={() => setIsIssueModalOpen(true)}
-          className="flex items-center px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"
+          className="flex items-center px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm w-full sm:w-auto justify-center"
         >
           <Plus className="w-4 h-4 mr-2" />
           Issue New Loan
@@ -78,7 +78,7 @@ export const LoansView: React.FC<LoansViewProps> = ({ loans, farmers, onIssueLoa
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
         <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <div className="p-3 bg-blue-50 text-blue-600 rounded-lg">
@@ -124,7 +124,65 @@ export const LoansView: React.FC<LoansViewProps> = ({ loans, farmers, onIssueLoa
             />
           </div>
         </div>
-        <div className="overflow-x-auto">
+        
+        {/* Mobile Card View */}
+        <div className="lg:hidden divide-y divide-gray-100">
+          {filteredLoans.map((loan) => (
+            <div key={loan.id} className="p-4 hover:bg-gray-50 transition-colors">
+              <div className="flex items-start justify-between mb-2">
+                <div>
+                  <p className="font-medium text-gray-900">{loan.farmerName}</p>
+                  <p className="text-xs text-gray-500 font-mono mt-1">{loan.id}</p>
+                </div>
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                  loan.status === LoanStatus.ACTIVE ? 'bg-blue-100 text-blue-800' :
+                  loan.status === LoanStatus.PAID ? 'bg-green-100 text-green-800' :
+                  'bg-red-100 text-red-800'
+                }`}>
+                  {loan.status === LoanStatus.ACTIVE && <CheckCircle2 className="w-3 h-3 mr-1" />}
+                  {loan.status === LoanStatus.DEFAULTED && <AlertCircle className="w-3 h-3 mr-1" />}
+                  {loan.status}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-3 text-sm mt-3">
+                <div>
+                  <p className="text-gray-500 text-xs">Type</p>
+                  <p className="text-gray-900">{loan.type}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500 text-xs">Due Date</p>
+                  <p className="text-gray-900">{new Date(loan.dueDate).toLocaleDateString()}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500 text-xs">Principal</p>
+                  <p className="text-gray-900">₦{loan.principal.toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500 text-xs">Outstanding</p>
+                  <p className="text-gray-700 font-bold">₦{loan.outstandingBalance.toLocaleString()}</p>
+                </div>
+              </div>
+              {loan.status !== LoanStatus.PAID && (
+                <div className="mt-3 pt-3 border-t border-gray-100">
+                  <button 
+                    onClick={() => setRepayLoanId(loan.id)}
+                    className="w-full text-emerald-600 hover:text-emerald-800 font-medium text-sm border border-emerald-200 hover:bg-emerald-50 px-4 py-2 rounded transition-colors"
+                  >
+                    Repay Loan
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+          {filteredLoans.length === 0 && (
+            <div className="p-10 text-center text-gray-400">
+              No loans found matching your search.
+            </div>
+          )}
+        </div>
+
+        {/* Desktop Table View */}
+        <div className="hidden lg:block overflow-x-auto">
           <table className="w-full text-left text-sm text-gray-600">
             <thead className="bg-gray-50 text-gray-700 font-medium uppercase text-xs">
               <tr>
@@ -184,8 +242,8 @@ export const LoansView: React.FC<LoansViewProps> = ({ loans, farmers, onIssueLoa
 
       {/* Issue Loan Modal */}
       {isIssueModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden my-auto">
             <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-emerald-50">
               <h3 className="text-lg font-bold text-emerald-900">Issue New Loan</h3>
               <button onClick={() => setIsIssueModalOpen(false)} className="text-gray-400 hover:text-gray-600">
@@ -264,8 +322,8 @@ export const LoansView: React.FC<LoansViewProps> = ({ loans, farmers, onIssueLoa
 
       {/* Repay Loan Modal */}
       {repayLoanId && selectedLoanForRepayment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden my-auto">
             <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
               <h3 className="text-lg font-bold text-gray-800">Record Repayment</h3>
               <p className="text-sm text-gray-500">For {selectedLoanForRepayment.farmerName}</p>

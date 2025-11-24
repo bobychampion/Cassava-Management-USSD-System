@@ -48,18 +48,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSave }) 
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-w-5xl">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-800">System Configuration</h2>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-800">System Configuration</h2>
         <button
           type="submit"
-          className="flex items-center px-6 py-2.5 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 transition-colors shadow-sm focus:ring-4 focus:ring-emerald-100"
+          className="flex items-center px-4 sm:px-6 py-2.5 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 transition-colors shadow-sm focus:ring-4 focus:ring-emerald-100 w-full sm:w-auto justify-center"
         >
           <Save className="w-4 h-4 mr-2" />
           {isSaved ? 'Saved Successfully!' : 'Save Changes'}
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Pricing & Financials */}
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
           <div className="flex items-center mb-6">

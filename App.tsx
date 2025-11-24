@@ -14,10 +14,11 @@ import {
 } from './constants';
 import { Farmer, KPIData, Purchase, TransactionStatus, NetworkOperator, USSDSession, Loan, LoanStatus, SystemSettings } from './types';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
-import { Phone, RefreshCw, Signal, Pencil, X, Save } from 'lucide-react';
+import { Phone, RefreshCw, Signal, Pencil, X, Save, Menu } from 'lucide-react';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState('dashboard');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [purchases, setPurchases] = useState<Purchase[]>(MOCK_PURCHASES);
   const [farmers, setFarmers] = useState<Farmer[]>(MOCK_FARMERS);
   const [loans, setLoans] = useState<Loan[]>(MOCK_LOANS);
@@ -141,8 +142,54 @@ const App: React.FC = () => {
       case 'farmers':
         return (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-800">Farmers Directory</h2>
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Farmers Directory</h2>
+            
+            {/* Mobile Card View */}
+            <div className="lg:hidden space-y-4">
+              {farmers.map((farmer) => (
+                <div key={farmer.id} className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <h3 className="font-semibold text-gray-900">{farmer.name}</h3>
+                      <p className="text-xs text-gray-500 font-mono mt-1">{farmer.id}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`inline-block px-2 py-1 text-xs rounded-full ${farmer.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        {farmer.status}
+                      </span>
+                      <button 
+                        onClick={() => setEditingFarmer(farmer)}
+                        className="text-gray-400 hover:text-emerald-600 transition-colors p-1"
+                        title="Edit Farmer"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-gray-500 text-xs">Phone</p>
+                      <p className="text-gray-900">{farmer.phone}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500 text-xs">Branch</p>
+                      <p className="text-gray-900">{farmer.branch}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500 text-xs">Wallet</p>
+                      <p className="text-gray-900 font-mono text-xs">{farmer.walletNumber}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500 text-xs">Balance</p>
+                      <p className="text-emerald-700 font-bold">₦{farmer.walletBalance.toLocaleString()}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden lg:block bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                <div className="overflow-x-auto">
                  <table className="w-full text-left text-sm text-gray-600">
                   <thead className="bg-gray-50 text-gray-700 font-medium uppercase text-xs">
@@ -191,8 +238,8 @@ const App: React.FC = () => {
 
             {/* Edit Farmer Modal */}
             {editingFarmer && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden">
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
+                <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden my-auto">
                   <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-emerald-50">
                     <h3 className="text-lg font-bold text-emerald-900">Edit Farmer Details</h3>
                     <button onClick={() => setEditingFarmer(null)} className="text-gray-400 hover:text-gray-600">
@@ -301,11 +348,11 @@ const App: React.FC = () => {
 
          return (
              <div className="space-y-6">
-                 <h2 className="text-2xl font-bold text-gray-800">USSD & Network Analytics</h2>
-                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                        <h3 className="text-lg font-semibold text-gray-800 mb-4">Traffic by Network Operator</h3>
-                        <div className="h-64">
+                 <h2 className="text-xl sm:text-2xl font-bold text-gray-800">USSD & Network Analytics</h2>
+                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                    <div className="bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm">
+                        <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-4">Traffic by Network Operator</h3>
+                        <div className="h-56 sm:h-64">
                             <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
                                     <Pie
@@ -328,8 +375,8 @@ const App: React.FC = () => {
                         </div>
                     </div>
                     
-                    <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                        <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Sessions</h3>
+                    <div className="bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm">
+                        <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-4">Recent Sessions</h3>
                         <div className="space-y-4">
                             {ussdSessions.map((session) => (
                                 <div key={session.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -365,24 +412,39 @@ const App: React.FC = () => {
 
   return (
     <div className="flex min-h-screen bg-slate-50">
-      <Sidebar currentView={currentView} setCurrentView={setCurrentView} />
-      <main className="flex-1 ml-64">
-        <header className="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-8 sticky top-0 z-10 shadow-sm">
-            <div className="flex items-center text-gray-500 text-sm">
-                <span>Branch:</span>
-                <span className="font-semibold text-gray-800 ml-2">Lagos North HQ</span>
-            </div>
+      <Sidebar 
+        currentView={currentView} 
+        setCurrentView={setCurrentView}
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
+      <main className="flex-1 lg:ml-64">
+        <header className="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-4 lg:px-8 sticky top-0 z-30 shadow-sm">
             <div className="flex items-center gap-4">
-                <div className="flex items-center bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-full text-xs font-bold">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="lg:hidden text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-gray-100"
+                aria-label="Open menu"
+              >
+                <Menu className="w-6 h-6" />
+              </button>
+              <div className="flex items-center text-gray-500 text-sm">
+                <span className="hidden sm:inline">Branch:</span>
+                <span className="font-semibold text-gray-800 ml-0 sm:ml-2">Lagos North HQ</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 sm:gap-4">
+                <div className="flex items-center bg-emerald-50 text-emerald-700 px-2 sm:px-3 py-1.5 rounded-full text-xs font-bold">
                     <Signal className="w-3 h-3 mr-1" />
-                    System Operational
+                    <span className="hidden sm:inline">System Operational</span>
+                    <span className="sm:hidden">Operational</span>
                 </div>
                 <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-bold border border-gray-300">
                     SA
                 </div>
             </div>
         </header>
-        <div className="p-8">
+        <div className="p-4 sm:p-6 lg:p-8">
           {renderContent()}
         </div>
       </main>

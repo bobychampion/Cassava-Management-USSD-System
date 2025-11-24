@@ -34,10 +34,10 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({ purchases, farmers
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h2 className="text-2xl font-bold text-gray-800">Purchase History</h2>
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Purchase History</h2>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"
+          className="flex items-center px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm w-full sm:w-auto justify-center"
         >
           <Plus className="w-4 h-4 mr-2" />
           New Purchase
@@ -57,7 +57,54 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({ purchases, farmers
             />
           </div>
         </div>
-        <div className="overflow-x-auto">
+        
+        {/* Mobile Card View */}
+        <div className="lg:hidden divide-y divide-gray-100">
+          {filteredPurchases.map((purchase) => (
+            <div key={purchase.id} className="p-4 hover:bg-gray-50 transition-colors">
+              <div className="flex items-start justify-between mb-2">
+                <div>
+                  <p className="font-medium text-gray-900">{purchase.farmerName}</p>
+                  <p className="text-xs text-gray-500 font-mono mt-1">{purchase.id}</p>
+                </div>
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                  purchase.status === TransactionStatus.SUCCESS 
+                    ? 'bg-emerald-100 text-emerald-800' 
+                    : 'bg-yellow-100 text-yellow-800'
+                }`}>
+                  {purchase.status === TransactionStatus.SUCCESS ? <CheckCircle2 className="w-3 h-3 mr-1" /> : <AlertCircle className="w-3 h-3 mr-1" />}
+                  {purchase.status}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-3 text-sm mt-3">
+                <div>
+                  <p className="text-gray-500 text-xs">Weight</p>
+                  <p className="text-gray-900 font-medium">{purchase.weightKg.toLocaleString()} kg</p>
+                </div>
+                <div>
+                  <p className="text-gray-500 text-xs">Price/KG</p>
+                  <p className="text-gray-900">₦{purchase.pricePerKg}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500 text-xs">Total</p>
+                  <p className="text-emerald-700 font-bold">₦{purchase.totalAmount.toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500 text-xs">Date</p>
+                  <p className="text-gray-900">{new Date(purchase.timestamp).toLocaleDateString()}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+          {filteredPurchases.length === 0 && (
+            <div className="p-10 text-center text-gray-400">
+              No purchases found matching your search.
+            </div>
+          )}
+        </div>
+
+        {/* Desktop Table View */}
+        <div className="hidden lg:block overflow-x-auto">
           <table className="w-full text-left text-sm text-gray-600">
             <thead className="bg-gray-50 text-gray-700 font-medium uppercase text-xs">
               <tr>
@@ -99,8 +146,8 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({ purchases, farmers
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden my-auto">
             <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-emerald-50">
               <h3 className="text-lg font-bold text-emerald-900">Record Cassava Purchase</h3>
               <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600">
