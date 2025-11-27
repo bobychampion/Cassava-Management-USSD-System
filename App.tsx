@@ -1,10 +1,11 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard';
 import { PurchasesView } from './components/PurchasesView';
 import { LoansView } from './components/LoansView';
 import { SettingsView } from './components/SettingsView';
+import LoginPage from './components/LoginPage';
 import {
   MOCK_FARMERS,
   MOCK_LOANS,
@@ -14,9 +15,15 @@ import {
 } from './constants';
 import { Farmer, KPIData, Purchase, TransactionStatus, NetworkOperator, USSDSession, Loan, LoanStatus, SystemSettings } from './types';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
-import { Phone, RefreshCw, Signal, Pencil, X, Save, Menu } from 'lucide-react';
+import { Phone, RefreshCw, Signal, Pencil, X, Save, Menu, LogOut } from 'lucide-react';
+import { getAuthToken } from './utils/cookies';
+import { introspect, logout as apiLogout } from './api/auth';
+import type { AdminInfo } from './api/auth';
 
 const App: React.FC = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [adminInfo, setAdminInfo] = useState<AdminInfo | null>(null);
   const [currentView, setCurrentView] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [purchases, setPurchases] = useState<Purchase[]>(MOCK_PURCHASES);
@@ -36,6 +43,35 @@ const App: React.FC = () => {
     maintenanceMode: false
   });
 
+  // Check authentication on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = getAuthToken();
+      
+      if (token) {
+        try {
+          const admin = await introspect();
+          setAdminInfo(admin);
+          setIsAuthenticated(true);
+        } catch (error) {
+          console.error('Token validation failed:', error);
+          setIsAuthenticated(false);
+        }
+      } else {
+        setIsAuthenticated(false);
+      }
+      
+      setIsCheckingAuth(false);
+    };
+
+    checkAuth();
+  }, []);
+
+  const handleLoginSuccess = (admin: AdminInfo) => {
+    setAdminInfo(admin);
+    setIsAuthenticated(true);
+  };
+
   // Derived State for KPIs
   const kpiData: KPIData = useMemo(() => {
     return {
@@ -45,6 +81,30 @@ const App: React.FC = () => {
       outstandingLoans: loans.reduce((sum, l) => sum + l.outstandingBalance, 0),
     };
   }, [purchases, farmers, loans]);
+
+  const handleLogout = () => {
+    apiLogout();
+    setAdminInfo(null);
+    setIsAuthenticated(false);
+    setCurrentView('dashboard');
+  };
+
+  // Show loading state while checking authentication
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login page if not authenticated
+  if (!isAuthenticated) {
+    return <LoginPage onLoginSuccess={handleLoginSuccess} />;
+  }
 
   const handleAddPurchase = (farmerId: string, weight: number) => {
     const farmer = farmers.find(f => f.id === farmerId);
@@ -439,8 +499,20 @@ const App: React.FC = () => {
                     <span className="hidden sm:inline">System Operational</span>
                     <span className="sm:hidden">Operational</span>
                 </div>
-                <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-bold border border-gray-300">
-                    SA
+                <div className="flex items-center gap-2">
+                  <div className="hidden sm:block text-sm text-gray-600 mr-2">
+                    {adminInfo?.email}
+                  </div>
+                  <div className="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center text-white font-bold border border-emerald-700" title={adminInfo?.email || 'Admin'}>
+                      {adminInfo?.email?.substring(0, 2).toUpperCase() || 'AD'}
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    title="Logout"
+                  >
+                    <LogOut className="w-5 h-5" />
+                  </button>
                 </div>
             </div>
         </header>
