@@ -9,6 +9,7 @@ import { SettingsView } from './components/SettingsView';
 import ProductsView from './components/ProductsView';
 import LoginPage from './components/LoginPage';
 import { TransactionsView } from './components/TransactionsView';
+import { AdminManagementView } from './components/AdminManagementView';
 import { SuccessModal } from './components/SuccessModal';
 import { settingsApi } from './api/settings';
 import {
@@ -264,6 +265,8 @@ const App: React.FC = () => {
                  </div>
              </div>
          );
+      case 'admins':
+        return <AdminManagementView />;
       default:
         return <div className="p-10 text-center text-gray-500">Module under construction</div>;
     }
