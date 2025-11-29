@@ -15,6 +15,141 @@ import {
 import { adminApi, Admin, AdminRole, AdminFilters, CreateAdminData } from '../api/admin';
 import { SuccessModal } from './SuccessModal';
 
+interface ViewAdminModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  admin: Admin | null;
+}
+
+const ViewAdminModal: React.FC<ViewAdminModalProps> = ({ isOpen, onClose, admin }) => {
+  if (!isOpen || !admin) return null;
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const getRoleDisplayName = (role: AdminRole): string => {
+    switch (role) {
+      case AdminRole.SUPER_ADMIN:
+        return 'Super Admin';
+      case AdminRole.SUPPORT:
+        return 'Support';
+      case AdminRole.VERIFIER:
+        return 'Verifier';
+      case AdminRole.FINANCE:
+        return 'Finance';
+      default:
+        return role;
+    }
+  };
+
+  const getRoleColor = (role: AdminRole): string => {
+    switch (role) {
+      case AdminRole.SUPER_ADMIN:
+        return 'bg-purple-100 text-purple-800';
+      case AdminRole.SUPPORT:
+        return 'bg-blue-100 text-blue-800';
+      case AdminRole.VERIFIER:
+        return 'bg-green-100 text-green-800';
+      case AdminRole.FINANCE:
+        return 'bg-yellow-100 text-yellow-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-lg font-semibold text-gray-800">Admin Details</h3>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 p-1"
+          >
+            ×
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          {/* Admin Avatar and Basic Info */}
+          <div className="flex items-center space-x-4 pb-4 border-b border-gray-200">
+            <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center">
+              <Users className="w-8 h-8 text-emerald-600" />
+            </div>
+            <div>
+              <h4 className="text-lg font-medium text-gray-900">{admin.fullName}</h4>
+              <p className="text-sm text-gray-500">{admin.email}</p>
+              <div className="flex items-center space-x-2 mt-2">
+                <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                  getRoleColor(admin.role)
+                }`}>
+                  {getRoleDisplayName(admin.role)}
+                </span>
+                <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                  admin.isActive
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-red-100 text-red-800'
+                }`}>
+                  {admin.isActive ? 'Active' : 'Inactive'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Admin Details */}
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">First Name</label>
+              <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">{admin.firstName}</p>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Last Name</label>
+              <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">{admin.lastName}</p>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Email Address</label>
+              <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">{admin.email}</p>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Admin ID</label>
+              <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded font-mono">{admin.id}</p>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Created At</label>
+              <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">{formatDate(admin.createdAt)}</p>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Last Updated</label>
+              <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">{formatDate(admin.updatedAt)}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6 flex justify-end">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 interface CreateAdminModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -181,7 +316,7 @@ const CreateAdminModal: React.FC<CreateAdminModalProps> = ({ isOpen, onClose, on
 
 interface AdminActionsMenuProps {
   admin: Admin;
-  onAction: (action: 'activate' | 'deactivate' | 'delete', admin: Admin) => void;
+  onAction: (action: 'activate' | 'deactivate' | 'delete' | 'view', admin: Admin) => void;
 }
 
 const AdminActionsMenu: React.FC<AdminActionsMenuProps> = ({ admin, onAction }) => {
@@ -202,7 +337,17 @@ const AdminActionsMenu: React.FC<AdminActionsMenuProps> = ({ admin, onAction }) 
             className="fixed inset-0 z-10"
             onClick={() => setIsOpen(false)}
           />
-          <div className="absolute right-0 top-8 z-20 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[150px]">
+          <div className="absolute right-0 top-8 z-20 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[150px] transform -translate-x-2">
+            <button
+              onClick={() => {
+                onAction('view', admin);
+                setIsOpen(false);
+              }}
+              className="w-full px-4 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center"
+            >
+              <Eye className="w-4 h-4 mr-2" />
+              View Details
+            </button>
             {admin.isActive ? (
               <button
                 onClick={() => {
@@ -262,6 +407,8 @@ export const AdminManagementView: React.FC = () => {
   });
   const [showFilters, setShowFilters] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [selectedAdmin, setSelectedAdmin] = useState<Admin | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [successModal, setSuccessModal] = useState<{
     isOpen: boolean;
@@ -312,9 +459,15 @@ export const AdminManagementView: React.FC = () => {
   };
 
   const handleAdminAction = async (
-    action: 'activate' | 'deactivate' | 'delete',
+    action: 'activate' | 'deactivate' | 'delete' | 'view',
     admin: Admin
   ) => {
+    if (action === 'view') {
+      setSelectedAdmin(admin);
+      setViewModalOpen(true);
+      return;
+    }
+
     if (!confirm(`Are you sure you want to ${action} ${admin.fullName}?`)) {
       return;
     }
@@ -483,7 +636,7 @@ export const AdminManagementView: React.FC = () => {
       )}
 
       {/* Admin Table */}
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-lg border border-gray-200 overflow-visible">
         {error && (
           <div className="p-4 bg-red-50 border-b border-red-200">
             <p className="text-red-800 text-sm">{error}</p>
@@ -497,7 +650,7 @@ export const AdminManagementView: React.FC = () => {
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto overflow-y-visible">
               <table className="min-w-full">
                 <thead className="bg-gray-50">
                   <tr>
@@ -630,6 +783,15 @@ export const AdminManagementView: React.FC = () => {
         isOpen={createModalOpen}
         onClose={() => setCreateModalOpen(false)}
         onSuccess={handleCreateSuccess}
+      />
+
+      <ViewAdminModal
+        isOpen={viewModalOpen}
+        onClose={() => {
+          setViewModalOpen(false);
+          setSelectedAdmin(null);
+        }}
+        admin={selectedAdmin}
       />
 
       <SuccessModal
