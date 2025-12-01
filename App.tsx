@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard';
 import { FarmersDirectory } from './components/FarmersDirectory';
@@ -12,15 +12,9 @@ import { TransactionsView } from './components/TransactionsView';
 import { AdminManagementView } from './components/AdminManagementView';
 import { SuccessModal } from './components/SuccessModal';
 import { settingsApi } from './api/settings';
-import {
-  MOCK_FARMERS,
-  MOCK_PURCHASES,
-  MOCK_USSD_SESSIONS,
-  PRICE_PER_KG
-} from './constants';
-import { Farmer, KPIData, Purchase, TransactionStatus, NetworkOperator, USSDSession, SystemSettings } from './types';
+import { SystemSettings } from './types';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
-import { Phone, RefreshCw, Signal, Pencil, X, Save, Menu, LogOut } from 'lucide-react';
+import { Phone, Signal, Menu } from 'lucide-react';
 import { getAuthToken } from './utils/cookies';
 import { introspect, logout as apiLogout } from './api/auth';
 import type { AdminInfo } from './api/auth';
@@ -31,11 +25,6 @@ const App: React.FC = () => {
   const [adminInfo, setAdminInfo] = useState<AdminInfo | null>(null);
   const [currentView, setCurrentView] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [purchases, setPurchases] = useState<Purchase[]>(MOCK_PURCHASES);
-  const [farmers, setFarmers] = useState<Farmer[]>(MOCK_FARMERS);
-  const [editingFarmer, setEditingFarmer] = useState<Farmer | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [ussdSessions] = useState<USSDSession[]>(MOCK_USSD_SESSIONS);
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [settingsSuccess, setSettingsSuccess] = useState<{
     isOpen: boolean;
@@ -47,16 +36,6 @@ const App: React.FC = () => {
     cassavaPricePerKg: 500,
     cassavaPricePerTon: 450000,
   });
-
-  // Derived State for KPIs - must be at top level before any returns
-  const kpiData: KPIData = useMemo(() => {
-    return {
-      totalWeight: purchases.reduce((sum, p) => sum + p.weightKg, 0),
-      totalPaid: purchases.reduce((sum, p) => sum + p.totalAmount, 0),
-      activeFarmers: farmers.filter(f => f.status === 'Active').length,
-      outstandingLoans: 0, // Will be loaded from real data in LoansView component
-    };
-  }, [purchases, farmers]);
 
   // Check authentication on mount
   useEffect(() => {
@@ -80,6 +59,19 @@ const App: React.FC = () => {
     };
 
     checkAuth();
+
+    // Listen for unauthorized events (401 errors)
+    const handleUnauthorized = () => {
+      setIsAuthenticated(false);
+      setAdminInfo(null);
+      setCurrentView('dashboard');
+    };
+
+    window.addEventListener('auth:unauthorized', handleUnauthorized);
+
+    return () => {
+      window.removeEventListener('auth:unauthorized', handleUnauthorized);
+    };
   }, []);
 
   const handleLoginSuccess = (admin: AdminInfo) => {
@@ -111,37 +103,6 @@ const App: React.FC = () => {
     return <LoginPage onLoginSuccess={handleLoginSuccess} />;
   }
 
-  const handleAddPurchase = (farmerId: string, weight: number) => {
-    const farmer = farmers.find(f => f.id === farmerId);
-    if (!farmer) return;
-
-    const newPurchase: Purchase = {
-      id: `P${Math.floor(Math.random() * 10000)}`,
-      farmerId,
-      farmerName: farmer.name,
-      weightKg: weight,
-      pricePerKg: settings.pricePerKg,
-      totalAmount: weight * settings.pricePerKg,
-      status: TransactionStatus.SUCCESS,
-      timestamp: new Date().toISOString(),
-      recordedBy: 'Current User'
-    };
-
-    setPurchases([newPurchase, ...purchases]);
-    
-    // Simple alert to simulate toast notification
-    alert(`Purchase Successful! ₦${newPurchase.totalAmount.toLocaleString()} sent to ${farmer.name}'s wallet.`);
-  };
-
-  const handleUpdateFarmer = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingFarmer) return;
-
-    setFarmers(farmers.map(f => f.id === editingFarmer.id ? editingFarmer : f));
-    setEditingFarmer(null);
-    // Simple alert
-    alert(`Farmer details for ${editingFarmer.name} updated.`);
-  };
 
   const handleUpdateSettings = async (newSettings: SystemSettings) => {
     try {
@@ -168,16 +129,9 @@ const App: React.FC = () => {
   const renderContent = () => {
     switch (currentView) {
       case 'dashboard':
-        return <Dashboard kpiData={kpiData} />;
+        return <Dashboard />;
       case 'purchases':
-        return (
-          <PurchasesView 
-            purchases={purchases} 
-            farmers={farmers} 
-            onAddPurchase={handleAddPurchase} 
-            pricePerKg={settings.pricePerKg} 
-          />
-        );
+        return <PurchasesView />;
       case 'loans':
         return (
           <LoansView />
@@ -238,28 +192,9 @@ const App: React.FC = () => {
                     <div className="bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm">
                         <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-4">Recent Sessions</h3>
                         <div className="space-y-4">
-                            {ussdSessions.map((session) => (
-                                <div key={session.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                    <div className="flex items-center">
-                                        <div className="p-2 bg-blue-100 rounded-full mr-3">
-                                            <Phone className="w-4 h-4 text-blue-600" />
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-medium text-gray-900">{session.msisdn}</p>
-                                            <p className="text-xs text-gray-500">{session.network} • {session.action}</p>
-                                        </div>
-                                    </div>
-                                    <div className="text-right">
-                                        <span className={`text-xs px-2 py-1 rounded-full ${
-                                            session.status === 'Success' ? 'bg-green-100 text-green-700' : 
-                                            session.status === 'Failed' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'
-                                        }`}>
-                                            {session.status}
-                                        </span>
-                                        <p className="text-xs text-gray-400 mt-1">{session.duration}s</p>
-                                    </div>
-                                </div>
-                            ))}
+                            <div className="text-center py-8 text-gray-500 text-sm">
+                                USSD session data will be displayed here when available
+                            </div>
                         </div>
                     </div>
                  </div>

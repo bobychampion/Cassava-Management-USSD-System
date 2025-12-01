@@ -1,11 +1,21 @@
-import React from 'react';
-import { Scale, Wallet, Users, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Scale, Wallet, Users, AlertCircle, RefreshCw } from 'lucide-react';
 import { StatsCard } from './StatsCard';
+import { LoadingSpinner } from './LoadingSpinner';
+import { ErrorMessage } from './ErrorMessage';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { KPIData } from '../types';
+import { purchasesApi, PurchaseKPIs } from '../api/purchases';
+import { loansApi, LoanKPIs } from '../api/loans';
+import { farmersApi } from '../api/farmers';
+import { transactionsApi, TransactionStats } from '../api/transactions';
 
-interface DashboardProps {
-  kpiData: KPIData;
+interface DashboardData {
+  purchaseKPIs: PurchaseKPIs | null;
+  loanKPIs: LoanKPIs | null;
+  activeFarmers: number;
+  transactionStats: TransactionStats | null;
+  loading: boolean;
+  error: string | null;
 }
 
 const CHART_DATA = [
@@ -18,8 +28,69 @@ const CHART_DATA = [
   { name: 'Sun', kg: 3490 },
 ];
 
-export const Dashboard: React.FC<DashboardProps> = ({ kpiData }) => {
-  if (kpiData.totalWeight === 0 && kpiData.totalPaid === 0 && kpiData.activeFarmers === 0) {
+export const Dashboard: React.FC = () => {
+  const [data, setData] = useState<DashboardData>({
+    purchaseKPIs: null,
+    loanKPIs: null,
+    activeFarmers: 0,
+    transactionStats: null,
+    loading: true,
+    error: null,
+  });
+
+  const loadDashboardData = async () => {
+    setData(prev => ({ ...prev, loading: true, error: null }));
+    try {
+      const [purchaseKPIs, loanKPIs, farmersResponse, transactionStats] = await Promise.allSettled([
+        purchasesApi.getPurchaseKPIs(),
+        loansApi.getLoanKPIs(),
+        farmersApi.getAllFarmers({ page: 1, limit: 1, status: 'active' }),
+        transactionsApi.getTransactionStats(),
+      ]);
+
+      const activeFarmers = farmersResponse.status === 'fulfilled' ? farmersResponse.value.total : 0;
+
+      setData({
+        purchaseKPIs: purchaseKPIs.status === 'fulfilled' ? purchaseKPIs.value : null,
+        loanKPIs: loanKPIs.status === 'fulfilled' ? loanKPIs.value : null,
+        activeFarmers,
+        transactionStats: transactionStats.status === 'fulfilled' ? transactionStats.value : null,
+        loading: false,
+        error: null,
+      });
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+      setData(prev => ({
+        ...prev,
+        loading: false,
+        error: error instanceof Error ? error.message : 'Failed to load dashboard data',
+      }));
+    }
+  };
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  if (data.loading) {
+    return <LoadingSpinner message="Loading dashboard data..." />;
+  }
+
+  if (data.error) {
+    return (
+      <ErrorMessage
+        title="Error Loading Dashboard"
+        message={data.error}
+        onRetry={loadDashboardData}
+      />
+    );
+  }
+
+  const totalWeight = data.purchaseKPIs?.totalWeight || 0;
+  const totalPaid = data.purchaseKPIs?.totalAmountSpent || 0;
+  const outstandingLoans = data.loanKPIs?.totalOutstanding || 0;
+
+  if (totalWeight === 0 && totalPaid === 0 && data.activeFarmers === 0) {
     return (
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8 text-center">
         <h3 className="text-lg font-semibold text-gray-800">No activity yet</h3>
@@ -35,35 +106,47 @@ export const Dashboard: React.FC<DashboardProps> = ({ kpiData }) => {
         <div className="text-xs sm:text-sm text-gray-500">Last updated: Just now</div>
       </div>
 
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Overview</h2>
+        <button
+          onClick={loadDashboardData}
+          className="flex items-center px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+          title="Refresh data"
+        >
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Refresh
+        </button>
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <StatsCard
           title="Total Collected"
-          value={`${kpiData.totalWeight.toLocaleString()} kg`}
-          trend="+12% from last week"
+          value={`${totalWeight.toLocaleString()} kg`}
+          trend={`${data.purchaseKPIs?.completedPurchases || 0} completed purchases`}
           trendUp={true}
           icon={Scale}
           colorClass="bg-blue-600"
         />
         <StatsCard
           title="Total Paid"
-          value={`₦${kpiData.totalPaid.toLocaleString()}`}
-          trend="+8% from last week"
+          value={`₦${totalPaid.toLocaleString()}`}
+          trend={`${data.purchaseKPIs?.totalPurchases || 0} total purchases`}
           trendUp={true}
           icon={Wallet}
           colorClass="bg-emerald-600"
         />
         <StatsCard
           title="Active Farmers"
-          value={kpiData.activeFarmers.toString()}
-          trend="+2 new today"
+          value={data.activeFarmers.toLocaleString()}
+          trend={`${data.loanKPIs?.activeLoans || 0} active loans`}
           trendUp={true}
           icon={Users}
           colorClass="bg-purple-600"
         />
         <StatsCard
           title="Outstanding Loans"
-          value={`₦${kpiData.outstandingLoans.toLocaleString()}`}
-          trend="-5% repayment rate"
+          value={`₦${outstandingLoans.toLocaleString()}`}
+          trend={`${data.loanKPIs?.defaultedLoans || 0} defaulted`}
           trendUp={false}
           icon={AlertCircle}
           colorClass="bg-orange-600"
