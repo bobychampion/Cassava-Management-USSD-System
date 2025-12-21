@@ -54,6 +54,10 @@ export const PurchasesView: React.FC<PurchasesViewProps> = () => {
   const [weight, setWeight] = useState<number>(0);
   const [pricePerKg] = useState(500); // Default price
   
+  // Modal states for viewing purchase
+  const [viewingPurchase, setViewingPurchase] = useState<PurchaseItem | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  
   // Filters and pagination
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
@@ -268,10 +272,31 @@ export const PurchasesView: React.FC<PurchasesViewProps> = () => {
     if (unit === 'ton' || weightKg >= 1000) {
       // Use ton pricing for bulk purchases
       const tons = weightKg / 1000;
-      return tons * cassavaPricing.pricePerTon;
+      return Math.round(tons * cassavaPricing.pricePerTon * 100) / 100;
     } else {
       // Use kg pricing for smaller purchases
-      return weightKg * cassavaPricing.pricePerKg;
+      return Math.round(weightKg * cassavaPricing.pricePerKg * 100) / 100;
+    }
+  };
+
+  // Helper to get price per kg for display (handles both kg and ton units)
+  const getPricePerKgForDisplay = (purchase: PurchaseItem): number => {
+    if (purchase.unit === 'ton') {
+      // If unit is 'ton', pricePerUnit is per ton, convert to per kg
+      return purchase.pricePerUnit / 1000;
+    }
+    // If unit is 'kg', pricePerUnit is already per kg
+    return purchase.pricePerUnit;
+  };
+
+  // Handler to view purchase details
+  const handleViewPurchase = async (purchaseId: string) => {
+    try {
+      const purchase = await purchasesApi.getPurchaseById(purchaseId);
+      setViewingPurchase(purchase);
+      setIsViewModalOpen(true);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load purchase details');
     }
   };
 
@@ -440,7 +465,10 @@ export const PurchasesView: React.FC<PurchasesViewProps> = () => {
                       {purchase.weightKg}kg
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatCurrency(purchase.pricePerKg)}/kg
+                      {formatCurrency(getPricePerKgForDisplay(purchase))}/kg
+                      {purchase.unit === 'ton' && (
+                        <span className="text-xs text-gray-500 ml-1">(bulk)</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {formatCurrency(purchase.totalAmount)}
@@ -454,25 +482,34 @@ export const PurchasesView: React.FC<PurchasesViewProps> = () => {
                       {formatDate(purchase.createdAt)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {purchase.status === 'failed' && (
+                      <div className="flex items-center gap-2">
                         <button
-                          onClick={() => handleRetryPurchase(purchase._id)}
-                          className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                          disabled={retryingPurchase === purchase._id}
+                          onClick={() => handleViewPurchase(purchase._id)}
+                          className="inline-flex items-center px-2 py-1 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
                         >
-                          {retryingPurchase === purchase._id ? (
-                            <>
-                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
-                              Retrying...
-                            </>
-                          ) : (
-                            <>
-                              <RefreshCw className="w-3 h-3 mr-1" />
-                              Retry
-                            </>
-                          )}
+                          <Eye className="w-3 h-3 mr-1" />
+                          View
                         </button>
-                      )}
+                        {purchase.status === 'failed' && (
+                          <button
+                            onClick={() => handleRetryPurchase(purchase._id)}
+                            className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                            disabled={retryingPurchase === purchase._id}
+                          >
+                            {retryingPurchase === purchase._id ? (
+                              <>
+                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
+                                Retrying...
+                              </>
+                            ) : (
+                              <>
+                                <RefreshCw className="w-3 h-3 mr-1" />
+                                Retry
+                              </>
+                            )}
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -643,6 +680,144 @@ export const PurchasesView: React.FC<PurchasesViewProps> = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* View Purchase Modal */}
+      {isViewModalOpen && viewingPurchase && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+              <h3 className="text-xl font-bold text-gray-800">Purchase Details</h3>
+              <button
+                onClick={() => {
+                  setIsViewModalOpen(false);
+                  setViewingPurchase(null);
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-6">
+              {/* Purchase Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="text-sm font-medium text-gray-500 mb-4">Purchase Information</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-xs text-gray-500">Purchase ID</p>
+                      <p className="text-sm font-medium text-gray-900 break-all">{viewingPurchase._id}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Weight</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {viewingPurchase.weightKg.toLocaleString()}kg 
+                        {viewingPurchase.unit === 'ton' && (
+                          <span className="text-gray-500 ml-1">
+                            ({(viewingPurchase.weightKg / 1000).toFixed(3)} tons)
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Price per {viewingPurchase.unit === 'ton' ? 'Ton' : 'Kg'}</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {formatCurrency(viewingPurchase.pricePerUnit)}/{viewingPurchase.unit}
+                        {viewingPurchase.unit === 'ton' && (
+                          <span className="text-gray-500 ml-2 text-xs">
+                            ({formatCurrency(getPricePerKgForDisplay(viewingPurchase))}/kg)
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Total Amount</p>
+                      <p className="text-lg font-bold text-emerald-600">
+                        {formatCurrency(viewingPurchase.totalAmount)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div>
+                  <h4 className="text-sm font-medium text-gray-500 mb-4">Farmer Information</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-xs text-gray-500">Farmer Name</p>
+                      <p className="text-sm font-medium text-gray-900">{viewingPurchase.farmerName}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Phone Number</p>
+                      <p className="text-sm font-medium text-gray-900">{viewingPurchase.farmerPhone}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Payment Method</p>
+                      <p className="text-sm font-medium text-gray-900 capitalize">
+                        {viewingPurchase.paymentMethod.replace('_', ' ')}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Payment Status</p>
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                        viewingPurchase.paymentStatus === 'paid' 
+                          ? 'bg-green-100 text-green-800' 
+                          : viewingPurchase.paymentStatus === 'failed'
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {viewingPurchase.paymentStatus.charAt(0).toUpperCase() + viewingPurchase.paymentStatus.slice(1)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Status and Dates */}
+              <div className="border-t border-gray-200 pt-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">Status</p>
+                    {getStatusBadge(viewingPurchase.status)}
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Created At</p>
+                    <p className="text-sm text-gray-900">{formatDate(viewingPurchase.createdAt)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Last Updated</p>
+                    <p className="text-sm text-gray-900">{formatDate(viewingPurchase.updatedAt)}</p>
+                  </div>
+                  {viewingPurchase.location && (
+                    <div>
+                      <p className="text-xs text-gray-500">Location</p>
+                      <p className="text-sm text-gray-900">{viewingPurchase.location}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {viewingPurchase.notes && (
+                <div className="border-t border-gray-200 pt-4">
+                  <p className="text-xs text-gray-500 mb-2">Notes</p>
+                  <p className="text-sm text-gray-900">{viewingPurchase.notes}</p>
+                </div>
+              )}
+            </div>
+            
+            <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-4 flex justify-end">
+              <button
+                onClick={() => {
+                  setIsViewModalOpen(false);
+                  setViewingPurchase(null);
+                }}
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

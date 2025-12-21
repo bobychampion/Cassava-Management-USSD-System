@@ -46,6 +46,18 @@ export const LoansView: React.FC<LoansViewProps> = () => {
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [isCreateLoanTypeModalOpen, setIsCreateLoanTypeModalOpen] = useState(false);
+  const [createLoanTypeLoading, setCreateLoanTypeLoading] = useState(false);
+  const [createLoanTypeForm, setCreateLoanTypeForm] = useState({
+    name: '',
+    category: '',
+    description: '',
+    interest_rate: 0,
+    duration_months: 0,
+    max_amount: 0,
+    min_amount: 0,
+    is_active: true
+  });
   const [loanData, setLoanData] = useState<CreateLoanData>({
     farmer_id: '',
     loan_type_id: '',
@@ -164,6 +176,36 @@ export const LoansView: React.FC<LoansViewProps> = () => {
       console.error('Failed to load farmers:', err);
     } finally {
       setLoadingFarmers(false);
+    }
+  };
+
+  const handleCreateLoanType = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setCreateLoanTypeLoading(true);
+      setError(null);
+      
+      await loansApi.createLoanType(createLoanTypeForm);
+      
+      setIsCreateLoanTypeModalOpen(false);
+      setCreateLoanTypeForm({
+        name: '',
+        category: '',
+        description: '',
+        interest_rate: 0,
+        duration_months: 0,
+        max_amount: 0,
+        min_amount: 0,
+        is_active: true
+      });
+      
+      setSuccessMessage('Loan type created successfully!');
+      setIsSuccessModalOpen(true);
+      loadLoanTypes();
+    } catch (err: any) {
+      setError(err.message || 'Failed to create loan type');
+    } finally {
+      setCreateLoanTypeLoading(false);
     }
   };
 
@@ -334,13 +376,22 @@ export const LoansView: React.FC<LoansViewProps> = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Loan Management</h2>
-        <button
-          onClick={() => handleCreateNewLoan()}
-          className="flex items-center px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Issue New Loan
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setIsCreateLoanTypeModalOpen(true)}
+            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Create Loan Type
+          </button>
+          <button
+            onClick={() => handleCreateNewLoan()}
+            className="flex items-center px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Issue New Loan
+          </button>
+        </div>
       </div>
 
       {/* KPI Cards */}
@@ -1043,6 +1094,184 @@ export const LoansView: React.FC<LoansViewProps> = () => {
                   className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
                 >
                   Create Loan
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Create Loan Type Modal */}
+      {isCreateLoanTypeModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+              <h3 className="text-xl font-bold text-gray-800">Create Loan Type</h3>
+              <button
+                onClick={() => {
+                  setIsCreateLoanTypeModalOpen(false);
+                  setCreateLoanTypeForm({
+                    name: '',
+                    category: '',
+                    description: '',
+                    interest_rate: 0,
+                    duration_months: 0,
+                    max_amount: 0,
+                    min_amount: 0,
+                    is_active: true
+                  });
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleCreateLoanType} className="p-6 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Loan Type Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={createLoanTypeForm.name}
+                    onChange={(e) => setCreateLoanTypeForm({ ...createLoanTypeForm, name: e.target.value })}
+                    placeholder="e.g., Equipment Loan"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Category *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={createLoanTypeForm.category}
+                    onChange={(e) => setCreateLoanTypeForm({ ...createLoanTypeForm, category: e.target.value })}
+                    placeholder="e.g., Equipment, Input, Emergency"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Description
+                </label>
+                <textarea
+                  value={createLoanTypeForm.description}
+                  onChange={(e) => setCreateLoanTypeForm({ ...createLoanTypeForm, description: e.target.value })}
+                  placeholder="Describe the loan type..."
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Interest Rate (%) *
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    value={createLoanTypeForm.interest_rate}
+                    onChange={(e) => setCreateLoanTypeForm({ ...createLoanTypeForm, interest_rate: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Duration (Months) *
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min="1"
+                    value={createLoanTypeForm.duration_months}
+                    onChange={(e) => setCreateLoanTypeForm({ ...createLoanTypeForm, duration_months: parseInt(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Minimum Amount (₦) *
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min="0"
+                    value={createLoanTypeForm.min_amount}
+                    onChange={(e) => setCreateLoanTypeForm({ ...createLoanTypeForm, min_amount: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Maximum Amount (₦) *
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min="0"
+                    value={createLoanTypeForm.max_amount}
+                    onChange={(e) => setCreateLoanTypeForm({ ...createLoanTypeForm, max_amount: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="is_active"
+                  checked={createLoanTypeForm.is_active}
+                  onChange={(e) => setCreateLoanTypeForm({ ...createLoanTypeForm, is_active: e.target.checked })}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <label htmlFor="is_active" className="ml-2 text-sm text-gray-700">
+                  Active (available for new loans)
+                </label>
+              </div>
+
+              <div className="flex space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsCreateLoanTypeModalOpen(false);
+                    setCreateLoanTypeForm({
+                      name: '',
+                      category: '',
+                      description: '',
+                      interest_rate: 0,
+                      duration_months: 0,
+                      max_amount: 0,
+                      min_amount: 0,
+                      is_active: true
+                    });
+                  }}
+                  className="flex-1 px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={createLoanTypeLoading}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {createLoanTypeLoading ? 'Creating...' : 'Create Loan Type'}
                 </button>
               </div>
             </form>

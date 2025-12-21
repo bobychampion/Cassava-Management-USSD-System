@@ -8,10 +8,12 @@ import { LoansView } from './components/LoansView';
 import { SettingsView } from './components/SettingsView';
 import ProductsView from './components/ProductsView';
 import LoginPage from './components/LoginPage';
+import StaffLoginPage from './components/StaffLoginPage';
 import { TransactionsView } from './components/TransactionsView';
 import { AdminManagementView } from './components/AdminManagementView';
+import { StaffManagementView } from './components/StaffManagementView';
 import { USSDAnalyticsView } from './components/USSDAnalyticsView';
-import StaffManagementView from './components/StaffManagementView';
+import { StaffPortal } from './components/StaffPortal';
 import PayrollManagementView from './components/PayrollManagementView';
 import PensionManagementView from './components/PensionManagementView';
 import { SuccessModal } from './components/SuccessModal';
@@ -21,11 +23,14 @@ import { Signal, Menu } from 'lucide-react';
 import { getAuthToken } from './utils/cookies';
 import { introspect, logout as apiLogout } from './api/auth';
 import type { AdminInfo } from './api/auth';
+import type { Staff } from './api/staff';
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [adminInfo, setAdminInfo] = useState<AdminInfo | null>(null);
+  const [staffInfo, setStaffInfo] = useState<Staff | null>(null);
+  const [isStaffMode, setIsStaffMode] = useState(false);
   const [currentView, setCurrentView] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [settingsLoading, setSettingsLoading] = useState(false);
@@ -80,6 +85,14 @@ const App: React.FC = () => {
   const handleLoginSuccess = (admin: AdminInfo) => {
     setAdminInfo(admin);
     setIsAuthenticated(true);
+    setIsStaffMode(false);
+  };
+
+  const handleStaffLoginSuccess = (staff: Staff) => {
+    setStaffInfo(staff);
+    setIsAuthenticated(true);
+    setIsStaffMode(true);
+    setCurrentView('staff');
   };
 
   const handleLogout = () => {
@@ -103,6 +116,13 @@ const App: React.FC = () => {
 
   // Show login page if not authenticated
   if (!isAuthenticated) {
+    // Check URL or localStorage for staff mode
+    const urlParams = new URLSearchParams(window.location.search);
+    const staffLogin = urlParams.get('staff') === 'true' || localStorage.getItem('staffMode') === 'true';
+    
+    if (staffLogin) {
+      return <StaffLoginPage onLoginSuccess={handleStaffLoginSuccess} />;
+    }
     return <LoginPage onLoginSuccess={handleLoginSuccess} />;
   }
 
@@ -130,6 +150,7 @@ const App: React.FC = () => {
   };
 
   const renderContent = () => {
+    // Admin mode - show admin views
     switch (currentView) {
       case 'dashboard':
         return <Dashboard />;
@@ -160,7 +181,7 @@ const App: React.FC = () => {
       case 'admins':
         return <AdminManagementView />;
       case 'staff':
-        return <StaffManagementView adminId={adminInfo?.id || ''} />;
+        return <StaffManagementView />;
       case 'payroll':
         return <PayrollManagementView />;
       case 'pension':
@@ -169,6 +190,20 @@ const App: React.FC = () => {
         return <div className="p-10 text-center text-gray-500">Module under construction</div>;
     }
   };
+
+  // Staff mode - dedicated staff portal
+  if (isStaffMode) {
+    return (
+      <StaffPortal
+        onLogout={() => {
+          setStaffInfo(null);
+          setIsAuthenticated(false);
+          setIsStaffMode(false);
+          setCurrentView('dashboard');
+        }}
+      />
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-slate-50">

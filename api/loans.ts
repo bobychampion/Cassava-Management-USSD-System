@@ -138,6 +138,13 @@ export class LoansApi {
   }
 
   /**
+   * Create a new loan type
+   */
+  async createLoanType(data: Omit<LoanType, 'id' | 'createdAt' | 'updatedAt' | 'created_by'>): Promise<LoanType> {
+    return this.client.post<LoanType>('/admins/loans/types', data);
+  }
+
+  /**
    * Get all loans with pagination and filters
    */
   async getAllLoans(query: GetLoansQuery = {}): Promise<LoansResponse> {
