@@ -32,21 +32,69 @@ export interface IntrospectResponse {
  * Login admin user
  */
 export const login = async (credentials: LoginCredentials): Promise<LoginResponse> => {
-  const response = await apiClient.post<LoginResponse>('/admins/login', credentials);
-  
-  // Store token in cookie
-  if (response.accessToken) {
-    setAuthToken(response.accessToken, 1); // 1 day expiry
+  // Try different possible endpoints
+  const endpoints = [
+    '/admins/login',
+    '/admin/login',
+    '/auth/login',
+    '/api/admins/login',
+    '/api/admin/login',
+  ];
+
+  for (const endpoint of endpoints) {
+    try {
+      const response = await apiClient.post<LoginResponse>(endpoint, credentials);
+      
+      // Store token in cookie
+      if (response.accessToken) {
+        setAuthToken(response.accessToken, 1); // 1 day expiry
+      }
+      
+      return response;
+    } catch (error: any) {
+      // If it's not a 404, throw the error
+      if (!error.message?.includes('404') && !error.message?.includes('Not Found')) {
+        throw error;
+      }
+      // Otherwise, try next endpoint
+      continue;
+    }
   }
   
-  return response;
+  throw new Error('Login endpoint not found. Please check backend configuration.');
 };
 
 /**
  * Get current admin info from token
  */
 export const introspect = async (): Promise<AdminInfo> => {
-  return apiClient.post<IntrospectResponse>('/admins/introspect');
+  // Try different possible endpoints
+  const endpoints = [
+    '/admins/introspect',
+    '/admin/introspect',
+    '/auth/introspect',
+    '/auth/me',
+    '/admin/me',
+    '/admins/me',
+    '/api/admins/introspect',
+    '/api/admin/introspect',
+  ];
+
+  for (const endpoint of endpoints) {
+    try {
+      const response = await apiClient.post<IntrospectResponse>(endpoint);
+      return response;
+    } catch (error: any) {
+      // If it's not a 404, throw the error
+      if (!error.message?.includes('404') && !error.message?.includes('Not Found')) {
+        throw error;
+      }
+      // Otherwise, try next endpoint
+      continue;
+    }
+  }
+  
+  throw new Error('Introspect endpoint not found. Please check backend configuration.');
 };
 
 /**

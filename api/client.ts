@@ -1,5 +1,5 @@
 /**
- * API Client for Promise Point Agrictech Solution Backend
+ * API Client for Promise Point Farm Backend
  */
 
 import { getAuthToken, clearAuthToken } from '../utils/cookies';

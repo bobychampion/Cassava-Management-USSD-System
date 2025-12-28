@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, Filter, Calendar, Download, Eye, X, User, Phone, MapPin, Building, Wallet, CreditCard, TrendingUp } from 'lucide-react';
 import { transactionsApi, Transaction, TransactionStats, TransactionQueryParams } from '../api/transactions';
 import { farmersApi, UserFinancialDetails } from '../api/farmers';
+import { LoadingSpinner } from './LoadingSpinner';
 
 interface UserModalProps {
   isOpen: boolean;
@@ -272,7 +273,7 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user, userId }) 
               <h5 className="font-medium text-gray-800 mb-2">All User Transactions</h5>
               {loading ? (
                 <div className="text-center py-4">
-                  <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                  <LoadingSpinner size="sm" message="" />
                 </div>
               ) : (
                 <div className="space-y-2 max-h-48 overflow-y-auto">
@@ -707,11 +708,11 @@ export const TransactionsView: React.FC = () => {
         )}
         
         {initialLoading || tabLoading ? (
-          <div className="p-8 text-center">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
-            <p className="text-gray-600">
-              {initialLoading ? 'Loading transactions...' : 'Updating...'}
-            </p>
+          <div className="p-8">
+            <LoadingSpinner 
+              size="sm" 
+              message={initialLoading ? 'Loading transactions...' : 'Updating...'} 
+            />
           </div>
         ) : (
           <>

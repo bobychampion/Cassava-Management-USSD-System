@@ -1,4 +1,4 @@
-# Promise Point Agrictech Solution
+# Promise Point Farm
 
 A comprehensive management dashboard for tracking agricultural purchases, farmer loans, and USSD transactions.
 
