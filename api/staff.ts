@@ -135,6 +135,13 @@ export interface StaffActionResponse {
   staff: Staff;
 }
 
+export interface BankDetails {
+  id?: string;
+  accountNumber: string;
+  bankName: string;
+  accountName: string;
+}
+
 class StaffApi {
   private client: typeof apiClient;
 
@@ -143,12 +150,12 @@ class StaffApi {
   }
 
   /**
-   * Staff login
+   * Staff login (using phone number and PIN)
    */
-  async login(email: string, password: string): Promise<StaffLoginResponse> {
+  async login(phone: string, pin: string): Promise<StaffLoginResponse> {
     const response = await this.client.post<StaffLoginResponse>('/staff/login', {
-      email,
-      password
+      phone,
+      pin
     });
     return response;
   }
@@ -166,6 +173,30 @@ class StaffApi {
    */
   async getBalances(): Promise<StaffBalances> {
     const response = await this.client.get<StaffBalances>('/staff/balances');
+    return response;
+  }
+
+  /**
+   * Get staff bank details
+   */
+  async getBankDetails(): Promise<BankDetails> {
+    const response = await this.client.get<BankDetails>('/staff/bank-details');
+    return response;
+  }
+
+  /**
+   * Create staff bank details
+   */
+  async createBankDetails(data: Omit<BankDetails, 'id'>): Promise<BankDetails> {
+    const response = await this.client.post<BankDetails>('/staff/bank-details', data);
+    return response;
+  }
+
+  /**
+   * Update staff bank details
+   */
+  async updateBankDetails(data: BankDetails): Promise<BankDetails> {
+    const response = await this.client.put<BankDetails>('/staff/bank-details', data);
     return response;
   }
 
@@ -389,12 +420,23 @@ export const getAllStaff = async (params?: {
   page?: number;
   limit?: number;
   search?: string;
-  status?: string;
+  status?: 'active' | 'inactive' | 'all' | string;
   role?: string;
   department?: string;
   is_approved?: boolean;
 }): Promise<PaginatedStaffResponse> => {
-  return staffApi.getAllStaff(params);
+  const filters: StaffFilters = {
+    page: params?.page,
+    limit: params?.limit,
+    search: params?.search,
+    status: params?.status === 'all' || params?.status === 'active' || params?.status === 'inactive' 
+      ? params.status as 'active' | 'inactive' | 'all'
+      : undefined,
+    role: params?.role,
+    department: params?.department,
+    is_approved: params?.is_approved
+  };
+  return staffApi.getAllStaff(filters);
 };
 
 export const getStaffById = async (staffId: string): Promise<Staff> => {
@@ -414,7 +456,8 @@ export const updateStaff = async (staffId: string, data: UpdateStaffDto): Promis
 };
 
 export const deactivateStaff = async (staffId: string, data: DeactivateStaffDto): Promise<Staff> => {
-  return staffApi.deactivateStaff(staffId, data.reason);
+  const response = await staffApi.deactivateStaff(staffId, data.reason);
+  return response.staff;
 };
 
 export const reactivateStaff = async (staffId: string): Promise<Staff> => {
