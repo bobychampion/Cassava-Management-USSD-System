@@ -1,5 +1,12 @@
 import React, { useState } from "react";
-import { PiggyBank, Building2, Wallet, Plus, RefreshCw } from "lucide-react";
+import {
+  PiggyBank,
+  Building2,
+  Wallet,
+  Plus,
+  RefreshCw,
+  DollarSign,
+} from "lucide-react";
 import { StaffBalances } from "../api/staff";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { ErrorMessage } from "./ErrorMessage";
@@ -10,6 +17,7 @@ interface BalancesViewProps {
   error?: string | null;
   onRefresh?: () => void;
   onAddBankDetails?: () => void;
+  onRequestWithdrawal?: () => void;
 }
 
 export const BalancesView: React.FC<BalancesViewProps> = ({
@@ -18,6 +26,7 @@ export const BalancesView: React.FC<BalancesViewProps> = ({
   error = null,
   onRefresh,
   onAddBankDetails,
+  onRequestWithdrawal,
 }) => {
   const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat("en-NG", {
@@ -58,6 +67,15 @@ export const BalancesView: React.FC<BalancesViewProps> = ({
             >
               <Plus className="w-4 h-4 mr-2" />
               Add Bank Details
+            </button>
+          )}
+          {onRequestWithdrawal && (
+            <button
+              onClick={onRequestWithdrawal}
+              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+            >
+              <DollarSign className="w-4 h-4 mr-2" />
+              Request Withdrawal
             </button>
           )}
           {onRefresh && (

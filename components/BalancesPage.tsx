@@ -40,6 +40,19 @@ export const BalancesPage: React.FC<BalancesPageProps> = ({ onLogout }) => {
   const [verifiedAccountName, setVerifiedAccountName] = useState<string>("");
   const [showBankSuccessModal, setShowBankSuccessModal] = useState(false);
   const [bankSuccessData, setBankSuccessData] = useState<any>(null);
+  const [showWithdrawalModal, setShowWithdrawalModal] = useState(false);
+  const [savedAccount, setSavedAccount] = useState<any>(null);
+  const [loadingSavedAccount, setLoadingSavedAccount] = useState(false);
+  const [requestingWithdrawal, setRequestingWithdrawal] = useState(false);
+  const [withdrawalForm, setWithdrawalForm] = useState({
+    amount: "",
+    pin: "",
+    useSavedAccount: true,
+    bankName: "",
+    bankCode: "",
+    accountNumber: "",
+    accountName: "",
+  });
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -148,6 +161,79 @@ export const BalancesPage: React.FC<BalancesPageProps> = ({ onLogout }) => {
   const handleOpenBankDetails = () => {
     setShowBankDetailsModal(true);
     loadBanks();
+  };
+
+  const loadSavedAccount = async () => {
+    try {
+      setLoadingSavedAccount(true);
+      const account = await staffApi.getWithdrawalAccount();
+      setSavedAccount(account);
+      if (account) {
+        setWithdrawalForm((prev) => ({
+          ...prev,
+          bankName: account.bankName || "",
+          bankCode: account.bankCode || "",
+          accountNumber: account.accountNumber || "",
+          accountName: account.accountName || "",
+        }));
+      }
+    } catch (err: any) {
+      // Account not found, that's okay
+      setSavedAccount(null);
+    } finally {
+      setLoadingSavedAccount(false);
+    }
+  };
+
+  const handleRequestWithdrawal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!profile?.id) return;
+
+    const amount = parseFloat(withdrawalForm.amount);
+    if (!amount || amount <= 0) return;
+
+    try {
+      setRequestingWithdrawal(true);
+
+      const withdrawalData: any = {
+        amount: Math.round(amount), // Convert to kobo
+        pin: withdrawalForm.pin,
+      };
+
+      if (!withdrawalForm.useSavedAccount || !savedAccount) {
+        withdrawalData.bankName = withdrawalForm.bankName;
+        withdrawalData.bankCode = withdrawalForm.bankCode;
+        withdrawalData.accountNumber = withdrawalForm.accountNumber;
+        withdrawalData.accountName = withdrawalForm.accountName;
+      }
+
+      await staffApi.requestWithdrawal(withdrawalData);
+
+      setShowWithdrawalModal(false);
+      alert(
+        "Withdrawal request submitted successfully! You will be notified once it's processed."
+      );
+
+      // Reset form
+      setWithdrawalForm({
+        amount: "",
+        pin: "",
+        useSavedAccount: true,
+        bankName: "",
+        bankCode: "",
+        accountNumber: "",
+        accountName: "",
+      });
+    } catch (err: any) {
+      alert(err.message || "Failed to request withdrawal");
+    } finally {
+      setRequestingWithdrawal(false);
+    }
+  };
+
+  const handleOpenWithdrawal = () => {
+    setShowWithdrawalModal(true);
+    loadSavedAccount();
   };
 
   const handleLogout = () => {
@@ -301,6 +387,7 @@ export const BalancesPage: React.FC<BalancesPageProps> = ({ onLogout }) => {
             error={null}
             onRefresh={loadProfile}
             onAddBankDetails={handleOpenBankDetails}
+            onRequestWithdrawal={handleOpenWithdrawal}
           />
         </div>
       </main>
@@ -534,6 +621,216 @@ export const BalancesPage: React.FC<BalancesPageProps> = ({ onLogout }) => {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Withdrawal Modal */}
+      {showWithdrawalModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Request Withdrawal
+                </h3>
+                <button
+                  onClick={() => {
+                    setShowWithdrawalModal(false);
+                    setWithdrawalForm({
+                      amount: "",
+                      pin: "",
+                      useSavedAccount: true,
+                      bankName: "",
+                      bankCode: "",
+                      accountNumber: "",
+                      accountName: "",
+                    });
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+
+            <form onSubmit={handleRequestWithdrawal} className="p-6 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Amount (₦) *
+                  </label>
+                  <input
+                    type="number"
+                    value={withdrawalForm.amount}
+                    onChange={(e) =>
+                      setWithdrawalForm({
+                        ...withdrawalForm,
+                        amount: e.target.value,
+                      })
+                    }
+                    placeholder="10000"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    required
+                    min="100"
+                    step="100"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    PIN *
+                  </label>
+                  <input
+                    type="password"
+                    value={withdrawalForm.pin}
+                    onChange={(e) =>
+                      setWithdrawalForm({
+                        ...withdrawalForm,
+                        pin: e.target.value.replace(/\D/g, "").slice(0, 4),
+                      })
+                    }
+                    placeholder="1234"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    required
+                    maxLength={4}
+                  />
+                </div>
+              </div>
+
+              {savedAccount && (
+                <div className="space-y-3">
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id="useSavedAccount"
+                      checked={withdrawalForm.useSavedAccount}
+                      onChange={(e) =>
+                        setWithdrawalForm({
+                          ...withdrawalForm,
+                          useSavedAccount: e.target.checked,
+                        })
+                      }
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <label
+                      htmlFor="useSavedAccount"
+                      className="ml-2 text-sm font-medium text-gray-700"
+                    >
+                      Use saved bank account
+                    </label>
+                  </div>
+
+                  {withdrawalForm.useSavedAccount && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <div className="text-sm text-blue-800">
+                        <strong>Account:</strong> {savedAccount.accountName}
+                        <br />
+                        <strong>Bank:</strong> {savedAccount.bankName}
+                        <br />
+                        <strong>Number:</strong> {savedAccount.accountNumber}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {(!savedAccount || !withdrawalForm.useSavedAccount) && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Bank Name *
+                      </label>
+                      <input
+                        type="text"
+                        value={withdrawalForm.bankName}
+                        onChange={(e) =>
+                          setWithdrawalForm({
+                            ...withdrawalForm,
+                            bankName: e.target.value,
+                          })
+                        }
+                        placeholder="United Bank For Africa"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Account Number *
+                      </label>
+                      <input
+                        type="text"
+                        value={withdrawalForm.accountNumber}
+                        onChange={(e) =>
+                          setWithdrawalForm({
+                            ...withdrawalForm,
+                            accountNumber: e.target.value
+                              .replace(/\D/g, "")
+                              .slice(0, 10),
+                          })
+                        }
+                        placeholder="1234567890"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        required
+                        maxLength={10}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Account Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={withdrawalForm.accountName}
+                      onChange={(e) =>
+                        setWithdrawalForm({
+                          ...withdrawalForm,
+                          accountName: e.target.value,
+                        })
+                      }
+                      placeholder="JOHN DOE"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      required
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="flex space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowWithdrawalModal(false);
+                    setWithdrawalForm({
+                      amount: "",
+                      pin: "",
+                      useSavedAccount: true,
+                      bankName: "",
+                      bankCode: "",
+                      accountNumber: "",
+                      accountName: "",
+                    });
+                  }}
+                  className="flex-1 px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={requestingWithdrawal}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {requestingWithdrawal
+                    ? "Requesting..."
+                    : "Request Withdrawal"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
