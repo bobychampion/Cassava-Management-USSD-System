@@ -43,9 +43,10 @@ export interface FarmerOption {
 
 export interface AdminLoanResponse {
   id: string;
-  farmer_id: string;
-  farmer_name: string;
-  farmer_phone: string;
+  user_id: string;
+  user_type: "staff" | "farmer";
+  name: string;
+  phone: string;
   loan_type_name: string;
   principal_amount: number; // in naira
   interest_rate: number;

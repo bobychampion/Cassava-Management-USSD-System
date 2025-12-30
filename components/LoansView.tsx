@@ -237,7 +237,7 @@ export const LoansView: React.FC<LoansViewProps> = () => {
 
       // Show success message
       setSuccessMessage(
-        `Loan request approved successfully!\nActive loan created and SMS notification sent to ${selectedLoan.farmer_name}.\nThe loan will be activated when the farmer picks up the inputs.`
+        `Loan request approved successfully!\nActive loan created and SMS notification sent to ${selectedLoan.name}.\nThe loan will be activated when the ${selectedLoan.user_type} picks up the inputs.`
       );
       setIsSuccessModalOpen(true);
 
@@ -321,7 +321,7 @@ export const LoansView: React.FC<LoansViewProps> = () => {
       return;
     }
 
-    const confirmMessage = `Are you sure you want to activate loan ${loan.reference} for ${loan.farmer_name}?\n\nThis will change the status to 'Active' and the farmer will start making monthly payments.`;
+    const confirmMessage = `Are you sure you want to activate loan ${loan.reference} for ${loan.name}?\n\nThis will change the status to 'Active' and the ${loan.user_type} will start making monthly payments.`;
 
     if (!window.confirm(confirmMessage)) {
       return;
@@ -332,7 +332,7 @@ export const LoansView: React.FC<LoansViewProps> = () => {
 
       // Show success message
       setSuccessMessage(
-        `Loan ${loan.reference} activated successfully!\nThe farmer ${loan.farmer_name} has been notified via SMS.\nMonthly payments will now commence.`
+        `Loan ${loan.reference} activated successfully!\nThe ${loan.user_type} ${loan.name} has been notified via SMS.\nMonthly payments will now commence.`
       );
       setIsSuccessModalOpen(true);
 
@@ -533,7 +533,7 @@ export const LoansView: React.FC<LoansViewProps> = () => {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
           <input
             type="text"
-            placeholder="Search by farmer name or reference..."
+            placeholder="Search by name or reference..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
@@ -576,7 +576,7 @@ export const LoansView: React.FC<LoansViewProps> = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Farmer
+                    Requester
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Reference
@@ -601,10 +601,13 @@ export const LoansView: React.FC<LoansViewProps> = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
                         <div className="text-sm font-medium text-gray-900">
-                          {loan.farmer_name}
+                          {loan.name}
                         </div>
                         <div className="text-sm text-gray-500">
-                          {loan.farmer_phone}
+                          {loan.phone}
+                        </div>
+                        <div className="text-xs text-gray-400 capitalize">
+                          {loan.user_type}
                         </div>
                       </div>
                     </td>
@@ -721,19 +724,25 @@ export const LoansView: React.FC<LoansViewProps> = () => {
             </div>
 
             <div className="p-6 space-y-6">
-              {/* Farmer Info */}
+              {/* Requester Info */}
               <div>
                 <h4 className="text-sm font-medium text-gray-700 mb-3">
-                  Farmer Information
+                  Requester Information
                 </h4>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm text-gray-500">Name</p>
-                    <p className="font-medium">{selectedLoan.farmer_name}</p>
+                    <p className="font-medium">{selectedLoan.name}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Phone</p>
-                    <p className="font-medium">{selectedLoan.farmer_phone}</p>
+                    <p className="font-medium">{selectedLoan.phone}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Type</p>
+                    <p className="font-medium capitalize">
+                      {selectedLoan.user_type}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -906,7 +915,7 @@ export const LoansView: React.FC<LoansViewProps> = () => {
             <form onSubmit={handleApprovalSubmit} className="p-6 space-y-4">
               <div>
                 <p className="text-sm text-gray-600 mb-4">
-                  Approving loan for {selectedLoan.farmer_name} -{" "}
+                  Approving loan for {selectedLoan.name} -{" "}
                   {formatCurrency(selectedLoan.principal_amount)}
                 </p>
               </div>
