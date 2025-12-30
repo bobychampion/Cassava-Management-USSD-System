@@ -178,6 +178,7 @@ const AdminApp: React.FC = () => {
         setCurrentView={setCurrentView}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
+        onLogout={handleLogout}
       />
       <main className="flex-1 lg:ml-64">
         <header className="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-4 lg:px-8 sticky top-0 z-30 shadow-sm">

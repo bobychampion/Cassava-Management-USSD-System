@@ -1,27 +1,49 @@
-import React from 'react';
-import { LayoutDashboard, Users, Scale, CreditCard, Smartphone, Settings, LogOut, X, Receipt, Shield, UserCog, Briefcase, DollarSign, PiggyBank } from 'lucide-react';
+import React from "react";
+import {
+  LayoutDashboard,
+  Users,
+  Scale,
+  CreditCard,
+  Smartphone,
+  Settings,
+  LogOut,
+  X,
+  Receipt,
+  Shield,
+  UserCog,
+  Briefcase,
+  DollarSign,
+  PiggyBank,
+} from "lucide-react";
 
 interface SidebarProps {
   currentView: string;
   setCurrentView: (view: string) => void;
   isOpen: boolean;
   onClose: () => void;
+  onLogout: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, isOpen, onClose }) => {
+export const Sidebar: React.FC<SidebarProps> = ({
+  currentView,
+  setCurrentView,
+  isOpen,
+  onClose,
+  onLogout,
+}) => {
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'farmers', label: 'Farmers', icon: Users },
-    { id: 'products', label: 'Products', icon: Scale },
-    { id: 'purchases', label: 'Purchases', icon: Scale },
-    { id: 'loans', label: 'Loans', icon: CreditCard },
-    { id: 'transactions', label: 'Transactions', icon: Receipt },
-    { id: 'admins', label: 'Admin Management', icon: Shield },
-    { id: 'staff', label: 'Staff Management', icon: UserCog },
-    { id: 'payroll', label: 'Payroll', icon: DollarSign },
-    { id: 'pension', label: 'Pension', icon: PiggyBank },
-    { id: 'ussd', label: 'USSD Logs', icon: Smartphone },
-    { id: 'settings', label: 'Settings', icon: Settings },
+    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { id: "farmers", label: "Farmers", icon: Users },
+    { id: "products", label: "Products", icon: Scale },
+    { id: "purchases", label: "Purchases", icon: Scale },
+    { id: "loans", label: "Loans", icon: CreditCard },
+    { id: "transactions", label: "Transactions", icon: Receipt },
+    { id: "admins", label: "Admin Management", icon: Shield },
+    { id: "staff", label: "Staff Management", icon: UserCog },
+    { id: "payroll", label: "Payroll", icon: DollarSign },
+    { id: "pension", label: "Pension", icon: PiggyBank },
+    { id: "ussd", label: "USSD Logs", icon: Smartphone },
+    { id: "settings", label: "Settings", icon: Settings },
   ];
 
   const handleItemClick = (view: string) => {
@@ -36,25 +58,29 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, i
     <>
       {/* Mobile backdrop */}
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
           onClick={onClose}
         />
       )}
-      
+
       {/* Sidebar */}
-      <div className={`
+      <div
+        className={`
         w-64 bg-white border-r border-gray-200 h-screen fixed left-0 top-0 flex flex-col z-50
         transform transition-transform duration-300 ease-in-out
         lg:translate-x-0
-        ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-      `}>
+        ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
+      `}
+      >
         <div className="h-16 flex items-center justify-between px-6 border-b border-gray-100">
           <div className="flex items-center">
-        <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center mr-3">
-          <span className="text-white font-bold text-lg">P</span>
-        </div>
-            <span className="text-xl font-bold text-gray-800 tracking-tight">Promise Point <span className="text-emerald-600">Agrictech</span></span>
+            <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center mr-3">
+              <span className="text-white font-bold text-lg">P</span>
+            </div>
+            <span className="text-xl font-bold text-gray-800 tracking-tight">
+              Promise Point <span className="text-emerald-600">Agrictech</span>
+            </span>
           </div>
           <button
             onClick={onClose}
@@ -76,11 +102,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, i
                   onClick={() => handleItemClick(item.id)}
                   className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-150 ${
                     isActive
-                      ? 'bg-emerald-50 text-emerald-700'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                      ? "bg-emerald-50 text-emerald-700"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                   }`}
                 >
-                  <Icon className={`w-5 h-5 mr-3 ${isActive ? 'text-emerald-600' : 'text-gray-400'}`} />
+                  <Icon
+                    className={`w-5 h-5 mr-3 ${
+                      isActive ? "text-emerald-600" : "text-gray-400"
+                    }`}
+                  />
                   {item.label}
                 </button>
               );
@@ -89,7 +119,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, i
         </nav>
 
         <div className="p-4 border-t border-gray-100">
-          <button className="w-full flex items-center px-4 py-3 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-colors">
+          <button
+            onClick={onLogout}
+            className="w-full flex items-center px-4 py-3 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+          >
             <LogOut className="w-5 h-5 mr-3" />
             Sign Out
           </button>
