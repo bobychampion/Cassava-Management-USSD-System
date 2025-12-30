@@ -12,11 +12,11 @@ const App: React.FC = () => {
   return (
     <Router>
       <Routes>
-        {/* Admin routes - default */}
-        <Route path="/*" element={<AdminApp />} />
-
         {/* Staff routes - under /staff */}
         <Route path="/staff/*" element={<StaffApp />} />
+
+        {/* Admin routes - default */}
+        <Route path="/*" element={<AdminApp />} />
       </Routes>
     </Router>
   );
