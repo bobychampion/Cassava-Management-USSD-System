@@ -1,29 +1,21 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  Menu,
-  X,
-  LayoutDashboard,
-  User,
-  FileText,
-  LogOut,
-  ArrowLeft,
-  Plus,
-  CheckCircle2,
-  Loader2,
-} from "lucide-react";
+import { useLocation } from "react-router-dom";
+import { Plus, CheckCircle2, Loader2, X } from "lucide-react";
 import { staffApi, StaffProfile } from "../api/staff";
 import { BalancesView } from "./BalancesView";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { ErrorMessage } from "./ErrorMessage";
-import { clearStaffAuthToken } from "../utils/cookies";
+import { StaffLayout } from "./StaffLayout";
+
+interface BalancesPageProps {
+  onLogout: () => void;
+}
 
 interface BalancesPageProps {
   onLogout: () => void;
 }
 
 export const BalancesPage: React.FC<BalancesPageProps> = ({ onLogout }) => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profile, setProfile] = useState<StaffProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -53,7 +45,7 @@ export const BalancesPage: React.FC<BalancesPageProps> = ({ onLogout }) => {
     accountNumber: "",
     accountName: "",
   });
-  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     loadProfile();
@@ -236,33 +228,6 @@ export const BalancesPage: React.FC<BalancesPageProps> = ({ onLogout }) => {
     loadSavedAccount();
   };
 
-  const handleLogout = () => {
-    clearStaffAuthToken();
-    onLogout();
-  };
-
-  const menuItems = [
-    {
-      id: "dashboard",
-      label: "Dashboard",
-      icon: LayoutDashboard,
-      path: "/staff/dashboard",
-    },
-    { id: "profile", label: "My Profile", icon: User, path: "/staff/profile" },
-    {
-      id: "balances",
-      label: "Balances",
-      icon: LayoutDashboard,
-      path: "/staff/balances",
-    },
-    {
-      id: "documents",
-      label: "Documents",
-      icon: FileText,
-      path: "/staff/documents",
-    },
-  ];
-
   if (loading && !profile) {
     return <LoadingSpinner message="Loading balances..." />;
   }
@@ -282,115 +247,21 @@ export const BalancesPage: React.FC<BalancesPageProps> = ({ onLogout }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Mobile sidebar overlay */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
-      <div
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0`}
-      >
-        <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
-          <div className="flex items-center">
-            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-sm mr-3">
-              CSMS
-            </div>
-            <span className="text-lg font-semibold text-gray-800">
-              Staff Portal
-            </span>
-          </div>
-          <button
-            onClick={() => setSidebarOpen(false)}
-            className="lg:hidden text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-gray-100"
-          >
-            <X className="w-6 h-6" />
-          </button>
-        </div>
-
-        <nav className="flex-1 px-4 py-6 space-y-2">
-          {menuItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => {
-                navigate(item.path);
-                setSidebarOpen(false);
-              }}
-              className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
-                item.id === "balances"
-                  ? "bg-blue-100 text-blue-700 border-r-2 border-blue-700"
-                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-              }`}
-            >
-              <item.icon className="w-5 h-5 mr-3" />
-              {item.label}
-            </button>
-          ))}
-        </nav>
-
-        <div className="p-4 border-t border-gray-100">
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-          >
-            <LogOut className="w-5 h-5 mr-3" />
-            Sign Out
-          </button>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <main className="flex-1 lg:ml-64">
-        <header className="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-4 lg:px-8 sticky top-0 z-30 shadow-sm">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="lg:hidden text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-gray-100"
-            >
-              <Menu className="w-6 h-6" />
-            </button>
-            <button
-              onClick={() => navigate("/staff/dashboard")}
-              className="flex items-center text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-gray-100"
-            >
-              <ArrowLeft className="w-5 h-5 mr-2" />
-              Back to Dashboard
-            </button>
-            <div className="h-6 w-px bg-gray-300 mx-2" />
-            <div>
-              <h1 className="text-lg font-semibold text-gray-800">
-                Account Balances
-              </h1>
-              <p className="text-xs text-gray-500">
-                Welcome, {profile.firstName}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold border border-blue-300">
-              {profile.firstName[0]}
-              {profile.lastName[0]}
-            </div>
-          </div>
-        </header>
-
-        <div className="p-4 sm:p-6 lg:p-8">
-          <BalancesView
-            balances={profile?.balances || null}
-            loading={false}
-            error={null}
-            onRefresh={loadProfile}
-            onAddBankDetails={handleOpenBankDetails}
-            onRequestWithdrawal={handleOpenWithdrawal}
-          />
-        </div>
-      </main>
+    <StaffLayout
+      title="Account Balances"
+      subtitle={`Welcome, ${profile.firstName}`}
+      profile={profile}
+      onLogout={onLogout}
+      currentPath={location.pathname}
+    >
+      <BalancesView
+        balances={profile?.balances || null}
+        loading={false}
+        error={null}
+        onRefresh={loadProfile}
+        onAddBankDetails={handleOpenBankDetails}
+        onRequestWithdrawal={handleOpenWithdrawal}
+      />
 
       {/* Bank Details Modal */}
       {showBankDetailsModal && (
@@ -834,6 +705,6 @@ export const BalancesPage: React.FC<BalancesPageProps> = ({ onLogout }) => {
           </div>
         </div>
       )}
-    </div>
+    </StaffLayout>
   );
 };

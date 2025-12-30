@@ -6,13 +6,10 @@ import {
   PiggyBank,
   Building2,
   FileText,
-  Menu,
-  X,
-  LayoutDashboard,
-  LogOut,
   Plus,
   CheckCircle2,
   XCircle,
+  X,
 } from "lucide-react";
 import {
   staffApi,
@@ -20,16 +17,15 @@ import {
   LoanType,
   StaffLoanRequest,
 } from "../api/staff";
-import { clearStaffAuthToken } from "../utils/cookies";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { ErrorMessage } from "./ErrorMessage";
+import { StaffLayout } from "./StaffLayout";
 
 interface StaffPortalProps {
   onLogout: () => void;
 }
 
 export const StaffPortal: React.FC<StaffPortalProps> = ({ onLogout }) => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profile, setProfile] = useState<StaffProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -88,10 +84,7 @@ export const StaffPortal: React.FC<StaffPortalProps> = ({ onLogout }) => {
     }
   };
 
-  const handleLogout = () => {
-    clearStaffAuthToken();
-    onLogout();
-  };
+
 
   const loadLoanTypes = async () => {
     try {
@@ -172,28 +165,6 @@ export const StaffPortal: React.FC<StaffPortalProps> = ({ onLogout }) => {
     loadLoanTypes();
   };
 
-  const menuItems = [
-    {
-      id: "dashboard",
-      label: "Dashboard",
-      icon: LayoutDashboard,
-      path: "/staff/dashboard",
-    },
-    { id: "profile", label: "My Profile", icon: User, path: "/staff/profile" },
-    {
-      id: "balances",
-      label: "Balances",
-      icon: Wallet,
-      path: "/staff/balances",
-    },
-    {
-      id: "documents",
-      label: "Documents",
-      icon: FileText,
-      path: "/staff/documents",
-    },
-  ];
-
   // Loading / error states (before we have a profile)
   if (loading && !profile)
     return <LoadingSpinner message="Loading staff portal..." />;
@@ -209,247 +180,139 @@ export const StaffPortal: React.FC<StaffPortalProps> = ({ onLogout }) => {
     return <LoadingSpinner message="Loading staff portal..." />;
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
-      {/* Mobile backdrop */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* Staff Sidebar */}
-      <div
-        className={`
-          w-64 bg-white border-r border-gray-200 h-screen fixed left-0 top-0 flex flex-col z-50
-          transform transition-transform duration-300 ease-in-out
-          lg:translate-x-0
-          ${
-            sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-          }
-        `}
-      >
-        <div className="h-16 flex items-center justify-between px-6 border-b border-gray-100">
-          <div className="flex items-center">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
-              <span className="text-white font-bold text-lg">S</span>
-            </div>
-            <span className="text-lg font-bold text-gray-800">
-              Staff Portal
-            </span>
+    <StaffLayout
+      title="Staff Portal"
+      subtitle={`Welcome, ${profile.firstName}`}
+      profile={profile}
+      onLogout={onLogout}
+      currentPath={location.pathname}
+      showBackButton={false}
+    >
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">
+              Welcome back, {profile.firstName}!
+            </h2>
+            <p className="text-gray-600">Here's an overview of your account</p>
           </div>
           <button
-            onClick={() => setSidebarOpen(false)}
-            className="lg:hidden text-gray-400 hover:text-gray-600"
+            onClick={handleOpenLoanRequest}
+            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
           >
-            <X className="w-6 h-6" />
+            <Plus className="w-4 h-4 mr-2" />
+            Request Loan
           </button>
         </div>
 
-        <nav className="flex-1 overflow-y-auto py-6">
-          <div className="px-4 space-y-1">
-            {menuItems.map((item) => {
-              const Icon = item.icon;
-              const active = location.pathname === item.path;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    navigate(item.path);
-                    setSidebarOpen(false);
-                  }}
-                  className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-150 ${
-                    active
-                      ? "bg-blue-50 text-blue-700"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+        {/* Balance Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-xl border border-green-200 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-green-200 rounded-full">
+                <PiggyBank className="w-6 h-6 text-green-700" />
+              </div>
+            </div>
+            <h3 className="text-sm font-medium text-gray-600 mb-1">Savings</h3>
+            <p className="text-2xl font-bold text-gray-800">
+              {formatCurrency(profile.balances?.savings || 0)}
+            </p>
+          </div>
+
+          <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl border border-blue-200 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-blue-200 rounded-full">
+                <Building2 className="w-6 h-6 text-blue-700" />
+              </div>
+            </div>
+            <h3 className="text-sm font-medium text-gray-600 mb-1">Pension</h3>
+            <p className="text-2xl font-bold text-gray-800">
+              {formatCurrency(profile.balances?.pension || 0)}
+            </p>
+          </div>
+
+          <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-xl border border-purple-200 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-purple-200 rounded-full">
+                <Wallet className="w-6 h-6 text-purple-700" />
+              </div>
+            </div>
+            <h3 className="text-sm font-medium text-gray-600 mb-1">Wallet</h3>
+            <p className="text-2xl font-bold text-gray-800">
+              {formatCurrency(profile.balances?.wallet || 0)}
+            </p>
+          </div>
+        </div>
+
+        {/* Quick Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">
+              Account Status
+            </h3>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Status</span>
+                <span
+                  className={`px-3 py-1 text-xs font-medium rounded-full ${
+                    profile.isActive
+                      ? "bg-green-100 text-green-800"
+                      : "bg-gray-100 text-gray-800"
                   }`}
                 >
-                  <Icon
-                    className={`w-5 h-5 mr-3 ${
-                      active ? "text-blue-600" : "text-gray-400"
-                    }`}
-                  />
-                  {item.label}
-                </button>
-              );
-            })}
-          </div>
-        </nav>
+                  {profile.isActive ? "Active" : "Inactive"}
+                </span>
+              </div>
 
-        <div className="p-4 border-t border-gray-100">
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-          >
-            <LogOut className="w-5 h-5 mr-3" />
-            Sign Out
-          </button>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Role</span>
+                <span className="text-sm font-medium text-gray-900 capitalize">
+                  {profile.role}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Member Since</span>
+                <span className="text-sm font-medium text-gray-900">
+                  {new Date(profile.createdAt).toLocaleDateString("en-NG", {
+                    year: "numeric",
+                    month: "short",
+                  })}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">
+              Document Status
+            </h3>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">NIN Document</span>
+                {profile.ninDocumentUrl ? (
+                  <CheckCircle2 className="w-5 h-5 text-green-600" />
+                ) : (
+                  <XCircle className="w-5 h-5 text-gray-400" />
+                )}
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">BVN Document</span>
+                {profile.bvnDocumentUrl ? (
+                  <CheckCircle2 className="w-5 h-5 text-green-600" />
+                ) : (
+                  <XCircle className="w-5 h-5 text-gray-400" />
+                )}
+              </div>
+              {(!profile.ninDocumentUrl || !profile.bvnDocumentUrl) && (
+                <p className="text-xs text-amber-600 mt-2">
+                  Please upload missing documents in the Documents section
+                </p>
+              )}
+            </div>
+          </div>
         </div>
       </div>
-
-      {/* Main Content */}
-      <main className="flex-1 lg:ml-64">
-        <header className="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-4 lg:px-8 sticky top-0 z-30 shadow-sm">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="lg:hidden text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-gray-100"
-            >
-              <Menu className="w-6 h-6" />
-            </button>
-            <div>
-              <h1 className="text-lg font-semibold text-gray-800">
-                Staff Portal
-              </h1>
-              <p className="text-xs text-gray-500">
-                Welcome, {profile.firstName}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold border border-blue-300">
-              {profile.firstName[0]}
-              {profile.lastName[0]}
-            </div>
-          </div>
-        </header>
-
-        <div className="p-4 sm:p-6 lg:p-8">
-          <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-800 mb-2">
-                  Welcome back, {profile.firstName}!
-                </h2>
-                <p className="text-gray-600">
-                  Here's an overview of your account
-                </p>
-              </div>
-              <button
-                onClick={handleOpenLoanRequest}
-                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Request Loan
-              </button>
-            </div>
-
-            {/* Balance Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-xl border border-green-200 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="p-3 bg-green-200 rounded-full">
-                    <PiggyBank className="w-6 h-6 text-green-700" />
-                  </div>
-                </div>
-                <h3 className="text-sm font-medium text-gray-600 mb-1">
-                  Savings
-                </h3>
-                <p className="text-2xl font-bold text-gray-800">
-                  {formatCurrency(profile.balances?.savings || 0)}
-                </p>
-              </div>
-
-              <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl border border-blue-200 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="p-3 bg-blue-200 rounded-full">
-                    <Building2 className="w-6 h-6 text-blue-700" />
-                  </div>
-                </div>
-                <h3 className="text-sm font-medium text-gray-600 mb-1">
-                  Pension
-                </h3>
-                <p className="text-2xl font-bold text-gray-800">
-                  {formatCurrency(profile.balances?.pension || 0)}
-                </p>
-              </div>
-
-              <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-xl border border-purple-200 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="p-3 bg-purple-200 rounded-full">
-                    <Wallet className="w-6 h-6 text-purple-700" />
-                  </div>
-                </div>
-                <h3 className="text-sm font-medium text-gray-600 mb-1">
-                  Wallet
-                </h3>
-                <p className="text-2xl font-bold text-gray-800">
-                  {formatCurrency(profile.balances?.wallet || 0)}
-                </p>
-              </div>
-            </div>
-
-            {/* Quick Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                  Account Status
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Status</span>
-                    <span
-                      className={`px-3 py-1 text-xs font-medium rounded-full ${
-                        profile.isActive
-                          ? "bg-green-100 text-green-800"
-                          : "bg-gray-100 text-gray-800"
-                      }`}
-                    >
-                      {profile.isActive ? "Active" : "Inactive"}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Role</span>
-                    <span className="text-sm font-medium text-gray-900 capitalize">
-                      {profile.role}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Member Since</span>
-                    <span className="text-sm font-medium text-gray-900">
-                      {new Date(profile.createdAt).toLocaleDateString("en-NG", {
-                        year: "numeric",
-                        month: "short",
-                      })}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                  Document Status
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">NIN Document</span>
-                    {profile.ninDocumentUrl ? (
-                      <CheckCircle2 className="w-5 h-5 text-green-600" />
-                    ) : (
-                      <XCircle className="w-5 h-5 text-gray-400" />
-                    )}
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">BVN Document</span>
-                    {profile.bvnDocumentUrl ? (
-                      <CheckCircle2 className="w-5 h-5 text-green-600" />
-                    ) : (
-                      <XCircle className="w-5 h-5 text-gray-400" />
-                    )}
-                  </div>
-                  {(!profile.ninDocumentUrl || !profile.bvnDocumentUrl) && (
-                    <p className="text-xs text-amber-600 mt-2">
-                      Please upload missing documents in the Documents section
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </main>
 
       {/* Loan Request Modal */}
       {showLoanRequestModal && (
@@ -749,6 +612,6 @@ export const StaffPortal: React.FC<StaffPortalProps> = ({ onLogout }) => {
           </div>
         </div>
       )}
-    </div>
+    </StaffLayout>
   );
 };
