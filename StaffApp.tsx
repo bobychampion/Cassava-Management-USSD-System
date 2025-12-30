@@ -60,13 +60,7 @@ const StaffApp: React.FC = () => {
     <Routes>
       <Route
         path="login"
-        element={
-          isAuthenticated ? (
-            <Navigate to="dashboard" replace />
-          ) : (
-            <StaffLoginPage onLoginSuccess={handleLoginSuccess} />
-          )
-        }
+        element={<StaffLoginPage onLoginSuccess={handleLoginSuccess} />}
       />
       <Route
         path="dashboard"
@@ -74,7 +68,7 @@ const StaffApp: React.FC = () => {
           isAuthenticated ? (
             <StaffPortal onLogout={handleLogout} />
           ) : (
-            <Navigate to="login" replace />
+            <Navigate to="/staff/login" replace />
           )
         }
       />
@@ -84,12 +78,12 @@ const StaffApp: React.FC = () => {
           isAuthenticated ? (
             <BalancesPage onLogout={handleLogout} />
           ) : (
-            <Navigate to="login" replace />
+            <Navigate to="/staff/login" replace />
           )
         }
       />
-      <Route path="" element={<Navigate to="dashboard" replace />} />
-      <Route path="*" element={<Navigate to="dashboard" replace />} />
+      <Route path="" element={<Navigate to="/staff/dashboard" replace />} />
+      <Route path="*" element={<Navigate to="/staff/dashboard" replace />} />
     </Routes>
   );
 };

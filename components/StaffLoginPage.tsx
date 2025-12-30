@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Lock, User, Loader2 } from "lucide-react";
 import { staffApi } from "../api/staff";
 import type { Staff } from "../api/staff";
-import { setStaffAuthToken } from "../utils/cookies";
+import { setStaffAuthToken, getStaffAuthToken } from "../utils/cookies";
 
 interface StaffLoginPageProps {
   onLoginSuccess: (staff: Staff) => void;
@@ -13,6 +14,15 @@ const StaffLoginPage: React.FC<StaffLoginPageProps> = ({ onLoginSuccess }) => {
   const [pin, setPin] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const navigate = useNavigate();
+
+  // Check if already authenticated
+  useEffect(() => {
+    const token = getStaffAuthToken();
+    if (token) {
+      navigate("/staff/dashboard", { replace: true });
+    }
+  }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,6 +35,8 @@ const StaffLoginPage: React.FC<StaffLoginPageProps> = ({ onLoginSuccess }) => {
       setStaffAuthToken(response.token);
       // Call parent callback with staff info
       onLoginSuccess(response.staff);
+      // Navigate to dashboard
+      navigate("/staff/dashboard", { replace: true });
     } catch (err: any) {
       // Try to extract error message from API error response
       let message = "Login failed. Please try again.";

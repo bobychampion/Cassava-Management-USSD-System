@@ -103,7 +103,9 @@ export const BalancesPage: React.FC<BalancesPageProps> = ({ onLogout }) => {
     try {
       setSettingAccount(true);
 
-      const selectedBank = banks.find(bank => bank.code === bankForm.bankCode);
+      const selectedBank = banks.find(
+        (bank) => bank.code === bankForm.bankCode
+      );
       const accountData = {
         bankName: selectedBank?.name || "",
         bankCode: bankForm.bankCode,
@@ -366,7 +368,9 @@ export const BalancesPage: React.FC<BalancesPageProps> = ({ onLogout }) => {
                       onChange={(e) =>
                         setBankForm({
                           ...bankForm,
-                          accountNumber: e.target.value.replace(/\D/g, "").slice(0, 10),
+                          accountNumber: e.target.value
+                            .replace(/\D/g, "")
+                            .slice(0, 10),
                         })
                       }
                       placeholder="1234567890"

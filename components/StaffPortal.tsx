@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   User,
   Wallet,
@@ -269,9 +270,25 @@ export const StaffPortal: React.FC<StaffPortalProps> = ({ onLogout }) => {
       icon: LayoutDashboard,
       isRoute: false,
     },
-    { id: "profile" as StaffViewType, label: "My Profile", icon: User, isRoute: false },
-    { id: "balances", label: "Balances", icon: Wallet, isRoute: true, path: "/staff/balances" },
-    { id: "documents" as StaffViewType, label: "Documents", icon: FileText, isRoute: false },
+    {
+      id: "profile" as StaffViewType,
+      label: "My Profile",
+      icon: User,
+      isRoute: false,
+    },
+    {
+      id: "balances",
+      label: "Balances",
+      icon: Wallet,
+      isRoute: true,
+      path: "/staff/balances",
+    },
+    {
+      id: "documents" as StaffViewType,
+      label: "Documents",
+      icon: FileText,
+      isRoute: false,
+    },
   ];
 
   if (loading && !profile) {
