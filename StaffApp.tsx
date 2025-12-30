@@ -4,6 +4,7 @@ import StaffLoginPage from "./components/StaffLoginPage";
 import { StaffPortal } from "./components/StaffPortal";
 import { BalancesPage } from "./components/BalancesPage";
 import { ProfilePage } from "./components/ProfilePage";
+import { DocumentsPage } from "./components/DocumentsPage";
 import { getStaffAuthToken, clearStaffAuthToken } from "./utils/cookies";
 import { staffApi } from "./api/staff";
 import type { Staff } from "./api/staff";
@@ -88,6 +89,16 @@ const StaffApp: React.FC = () => {
         element={
           isAuthenticated ? (
             <ProfilePage onLogout={handleLogout} />
+          ) : (
+            <Navigate to="/staff/login" replace />
+          )
+        }
+      />
+      <Route
+        path="documents"
+        element={
+          isAuthenticated ? (
+            <DocumentsPage onLogout={handleLogout} />
           ) : (
             <Navigate to="/staff/login" replace />
           )

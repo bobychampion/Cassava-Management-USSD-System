@@ -367,7 +367,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onLogout }) => {
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
                   <div className="flex items-start">
                     <CheckCircle2 className="w-5 h-5 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
-                    <div className="text-sm text-green-800">{uploadSuccess}</div>
+                    <div className="text-sm text-green-800">
+                      {uploadSuccess}
+                    </div>
                   </div>
                 </div>
               )}
