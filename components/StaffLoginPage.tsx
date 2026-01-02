@@ -16,6 +16,19 @@ const StaffLoginPage: React.FC<StaffLoginPageProps> = ({ onLoginSuccess }) => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
+  // Forgot PIN states
+  const [showForgotPin, setShowForgotPin] = useState(false);
+  const [forgotStep, setForgotStep] = useState<"phone" | "otp" | "newPin">(
+    "phone"
+  );
+  const [forgotPhone, setForgotPhone] = useState("");
+  const [otp, setOtp] = useState("");
+  const [newPin, setNewPin] = useState("");
+  const [confirmPin, setConfirmPin] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotError, setForgotError] = useState("");
+  const [forgotSuccess, setForgotSuccess] = useState("");
+
   // Check if already authenticated
   useEffect(() => {
     const token = getStaffAuthToken();
@@ -49,6 +62,69 @@ const StaffLoginPage: React.FC<StaffLoginPageProps> = ({ onLoginSuccess }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleForgotPin = () => {
+    setShowForgotPin(true);
+    setForgotStep("phone");
+    setForgotPhone("");
+    setOtp("");
+    setNewPin("");
+    setConfirmPin("");
+    setForgotError("");
+    setForgotSuccess("");
+  };
+
+  const handleRequestOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgotError("");
+    setForgotLoading(true);
+
+    try {
+      await staffApi.requestPinReset(forgotPhone);
+      setForgotSuccess("OTP sent successfully to your phone number.");
+      setForgotStep("otp");
+    } catch (err: any) {
+      let message = "Failed to send OTP. Please try again.";
+      if (err instanceof Error) {
+        message = err.message;
+      }
+      setForgotError(message);
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgotError("");
+    setForgotLoading(true);
+
+    try {
+      await staffApi.verifyPinReset(forgotPhone, otp, newPin);
+      setForgotSuccess(
+        "PIN reset successfully! You can now login with your new PIN."
+      );
+      setTimeout(() => {
+        setShowForgotPin(false);
+        setForgotStep("phone");
+      }, 3000);
+    } catch (err: any) {
+      let message = "Failed to reset PIN. Please try again.";
+      if (err instanceof Error) {
+        message = err.message;
+      }
+      setForgotError(message);
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  const handleBackToLogin = () => {
+    setShowForgotPin(false);
+    setForgotStep("phone");
+    setForgotError("");
+    setForgotSuccess("");
   };
 
   return (
@@ -158,7 +234,172 @@ const StaffLoginPage: React.FC<StaffLoginPageProps> = ({ onLoginSuccess }) => {
               )}
             </button>
           </form>
+
+          <div className="text-center mt-4">
+            <button
+              onClick={handleForgotPin}
+              className="text-sm text-blue-600 hover:text-blue-500 font-medium"
+            >
+              Forgot PIN?
+            </button>
+          </div>
         </div>
+
+        {/* Forgot PIN Modal */}
+        {showForgotPin && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8 w-full max-w-md">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">Reset PIN</h2>
+                <button
+                  onClick={handleBackToLogin}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              {forgotStep === "phone" && (
+                <form onSubmit={handleRequestOtp} className="space-y-4">
+                  <p className="text-gray-600 text-sm mb-4">
+                    Enter your phone number to receive an OTP for PIN reset.
+                  </p>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Phone Number
+                    </label>
+                    <input
+                      type="tel"
+                      required
+                      value={forgotPhone}
+                      onChange={(e) => setForgotPhone(e.target.value)}
+                      className="block w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Enter your phone number"
+                      pattern="[0-9]{10,11}"
+                      maxLength={11}
+                    />
+                  </div>
+
+                  {forgotError && (
+                    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                      {forgotError}
+                    </div>
+                  )}
+
+                  {forgotSuccess && (
+                    <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm">
+                      {forgotSuccess}
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={forgotLoading}
+                    className="w-full flex items-center justify-center px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                  >
+                    {forgotLoading ? (
+                      <>
+                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                        Sending OTP...
+                      </>
+                    ) : (
+                      "Send OTP"
+                    )}
+                  </button>
+                </form>
+              )}
+
+              {forgotStep === "otp" && (
+                <form onSubmit={handleVerifyOtp} className="space-y-4">
+                  <p className="text-gray-600 text-sm mb-4">
+                    Enter the OTP sent to your phone and set a new PIN.
+                  </p>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      OTP
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value)}
+                      className="block w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Enter 6-digit OTP"
+                      pattern="[0-9]{6}"
+                      maxLength={6}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      New PIN
+                    </label>
+                    <input
+                      type="password"
+                      required
+                      value={newPin}
+                      onChange={(e) => setNewPin(e.target.value)}
+                      className="block w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Enter new PIN (4-6 digits)"
+                      pattern="[0-9]{4,6}"
+                      maxLength={6}
+                    />
+                  </div>
+
+                  {forgotError && (
+                    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                      {forgotError}
+                    </div>
+                  )}
+
+                  {forgotSuccess && (
+                    <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm">
+                      {forgotSuccess}
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={forgotLoading}
+                    className="w-full flex items-center justify-center px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                  >
+                    {forgotLoading ? (
+                      <>
+                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                        Resetting PIN...
+                      </>
+                    ) : (
+                      "Reset PIN"
+                    )}
+                  </button>
+                </form>
+              )}
+
+              <div className="mt-4 text-center">
+                <button
+                  onClick={handleBackToLogin}
+                  className="text-sm text-gray-600 hover:text-gray-800"
+                >
+                  Back to Login
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Footer */}
         <div className="mt-8 text-center text-sm text-gray-600">

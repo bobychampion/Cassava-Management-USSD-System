@@ -752,8 +752,61 @@ class StaffApi {
     const result = await response.json();
     return result && result.data ? result.data : result;
   }
-}
 
+  /**
+   * Request PIN reset - sends OTP to phone
+   */
+  async requestPinReset(phone: string): Promise<{ message: string }> {
+    const API_BASE_URL =
+      import.meta.env.VITE_API_URL || "http://localhost:3000";
+    const response = await fetch(`${API_BASE_URL}/staff/request-pin-reset`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ phone }),
+    });
+
+    if (!response.ok) {
+      const error = await response
+        .json()
+        .catch(() => ({ message: "Failed to request PIN reset" }));
+      throw new Error(error.message || "Failed to request PIN reset");
+    }
+
+    const result = await response.json();
+    return result && result.data ? result.data : result;
+  }
+
+  /**
+   * Verify PIN reset with OTP and set new PIN
+   */
+  async verifyPinReset(
+    phone: string,
+    otp: string,
+    newPin: string
+  ): Promise<{ message: string }> {
+    const API_BASE_URL =
+      import.meta.env.VITE_API_URL || "http://localhost:3000";
+    const response = await fetch(`${API_BASE_URL}/staff/verify-pin-reset`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ phone, otp, newPin }),
+    });
+
+    if (!response.ok) {
+      const error = await response
+        .json()
+        .catch(() => ({ message: "Failed to verify PIN reset" }));
+      throw new Error(error.message || "Failed to verify PIN reset");
+    }
+
+    const result = await response.json();
+    return result && result.data ? result.data : result;
+  }
+}
 
 export const staffApi = new StaffApi();
 
