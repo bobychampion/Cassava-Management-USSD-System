@@ -26,7 +26,6 @@ const AdminApp: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [adminInfo, setAdminInfo] = useState<AdminInfo | null>(null);
-  const [currentView, setCurrentView] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [settingsSuccess, setSettingsSuccess] = useState<{
@@ -67,7 +66,6 @@ const AdminApp: React.FC = () => {
     const handleUnauthorized = () => {
       setIsAuthenticated(false);
       setAdminInfo(null);
-      setCurrentView("dashboard");
     };
 
     window.addEventListener("auth:unauthorized", handleUnauthorized);
@@ -86,7 +84,6 @@ const AdminApp: React.FC = () => {
     apiLogout();
     setAdminInfo(null);
     setIsAuthenticated(false);
-    setCurrentView("dashboard");
   };
 
   const handleUpdateSettings = async (newSettings: SystemSettings) => {
@@ -115,47 +112,6 @@ const AdminApp: React.FC = () => {
     }
   };
 
-  const renderContent = () => {
-    switch (currentView) {
-      case "dashboard":
-        return <Dashboard />;
-      case "purchases":
-        return <PurchasesView />;
-      case "loans":
-        return <LoansView />;
-      case "transactions":
-        return <TransactionsView />;
-      case "settings":
-        return (
-          <SettingsView
-            settings={settings}
-            onSave={handleUpdateSettings}
-            loading={settingsLoading}
-          />
-        );
-      case "products":
-        return <ProductsView />;
-      case "farmers":
-        return <FarmersDirectory />;
-      case "ussd":
-        return <USSDAnalyticsView />;
-      case "admins":
-        return <AdminManagementView />;
-      case "staff":
-        return <StaffManagementView />;
-      case "payroll":
-        return <PayrollManagementView />;
-      case "pension":
-        return <PensionManagementView />;
-      default:
-        return (
-          <div className="p-10 text-center text-gray-500">
-            Module under construction
-          </div>
-        );
-    }
-  };
-
   if (isCheckingAuth) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -174,8 +130,6 @@ const AdminApp: React.FC = () => {
   return (
     <div className="flex min-h-screen bg-slate-50">
       <Sidebar
-        currentView={currentView}
-        setCurrentView={setCurrentView}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         onLogout={handleLogout}
@@ -208,7 +162,32 @@ const AdminApp: React.FC = () => {
             </div>
           </div>
         </header>
-        <div className="p-4 sm:p-6 lg:p-8">{renderContent()}</div>
+        <div className="p-4 sm:p-6 lg:p-8">
+          <Routes>
+            <Route path="/" element={<Navigate to="/dashboard" />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/farmers" element={<FarmersDirectory />} />
+            <Route path="/products" element={<ProductsView />} />
+            <Route path="/purchases" element={<PurchasesView />} />
+            <Route path="/loans" element={<LoansView />} />
+            <Route path="/transactions" element={<TransactionsView />} />
+            <Route path="/admins" element={<AdminManagementView />} />
+            <Route path="/staff" element={<StaffManagementView />} />
+            <Route path="/payroll" element={<PayrollManagementView />} />
+            <Route path="/pension" element={<PensionManagementView />} />
+            <Route path="/ussd" element={<USSDAnalyticsView />} />
+            <Route
+              path="/settings"
+              element={
+                <SettingsView
+                  settings={settings}
+                  onSave={handleUpdateSettings}
+                  loading={settingsLoading}
+                />
+              }
+            />
+          </Routes>
+        </div>
       </main>
 
       {/* Settings Success Modal */}

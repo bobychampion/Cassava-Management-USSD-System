@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
@@ -17,20 +18,18 @@ import {
 } from "lucide-react";
 
 interface SidebarProps {
-  currentView: string;
-  setCurrentView: (view: string) => void;
   isOpen: boolean;
   onClose: () => void;
   onLogout: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
-  currentView,
-  setCurrentView,
   isOpen,
   onClose,
   onLogout,
 }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     { id: "farmers", label: "Farmers", icon: Users },
@@ -46,8 +45,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: "settings", label: "Settings", icon: Settings },
   ];
 
-  const handleItemClick = (view: string) => {
-    setCurrentView(view);
+  const handleItemClick = (id: string) => {
+    navigate(`/${id}`);
     // Close sidebar on mobile after selection
     if (window.innerWidth < 1024) {
       onClose();
@@ -95,7 +94,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="px-4 space-y-1">
             {menuItems.map((item) => {
               const Icon = item.icon;
-              const isActive = currentView === item.id;
+              const isActive = location.pathname === `/${item.id}`;
               return (
                 <button
                   key={item.id}
