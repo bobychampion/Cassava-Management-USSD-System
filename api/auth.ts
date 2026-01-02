@@ -34,11 +34,19 @@ export interface AdminProfile {
   firstName: string;
   lastName: string;
   fullName: string;
+  phone?: string;
   role: string;
   permissions: string[];
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface UpdateProfileRequest {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
 }
 
 /**
@@ -72,6 +80,15 @@ export const introspect = async (): Promise<AdminInfo> => {
  */
 export const getProfile = async (): Promise<AdminProfile> => {
   return apiClient.get<AdminProfile>("/admins/profile");
+};
+
+/**
+ * Update current admin profile
+ */
+export const updateProfile = async (
+  updates: UpdateProfileRequest
+): Promise<AdminProfile> => {
+  return apiClient.patch<AdminProfile>("/admins/profile", updates);
 };
 
 /**
