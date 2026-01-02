@@ -24,8 +24,6 @@ export const StaffLayout: React.FC<StaffLayoutProps> = ({
   onLogout,
   currentPath,
   showBackButton = true,
-  backPath = "/staff/dashboard",
-  backLabel = "Back to Dashboard",
 }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
@@ -54,18 +52,7 @@ export const StaffLayout: React.FC<StaffLayoutProps> = ({
             >
               <Menu className="w-6 h-6" />
             </button>
-            {showBackButton && (
-              <>
-                <button
-                  onClick={() => navigate(backPath)}
-                  className="flex items-center text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-gray-100"
-                >
-                  <ArrowLeft className="w-5 h-5 mr-2" />
-                  {backLabel}
-                </button>
-                <div className="h-6 w-px bg-gray-300 mx-2" />
-              </>
-            )}
+           
             <div>
               <h1 className="text-lg font-semibold text-gray-800">{title}</h1>
               {subtitle && <p className="text-xs text-gray-500">{subtitle}</p>}
